@@ -15,7 +15,7 @@ pipelines:
           - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
           - composer install
           #- vendor/bin/phpunit
-          - pipe: sonarsource/sonarcloud-quality-gate:0.1.2
+          #- pipe: sonarsource/sonarcloud-quality-gate:0.1.2
           # variables:
           #   SONAR_TOKEN: '<string>'  # Optional
           #   SONAR_QUALITY_GATE_TIMEOUT: '<int>'  # Optional
