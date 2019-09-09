@@ -66,8 +66,9 @@ class OrdersController extends \yii\web\Controller
         else {
             $view = 'view';
             $positionsQuery = OrderPositions::find()
+                ->addSelect(['*', 'IF(user_id = '.Yii::$app->user->id.', 0, 1) as sort_user'])
                 ->andWhere(['order_id' => $id])
-                ->orderBy('user_id ASC');
+                ->orderBy(['sort_user' => 'ASC', 'user_id' => 'ASC']);
         }
 
         $dataProvider = new ActiveDataProvider(
