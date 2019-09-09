@@ -68,7 +68,7 @@ class OrdersController extends \yii\web\Controller
             $positionsQuery = OrderPositions::find()
                 ->addSelect(['*', 'IF(user_id = '.Yii::$app->user->id.', 0, 1) as sort_user'])
                 ->andWhere(['order_id' => $id])
-                ->orderBy(['sort_user' => 'ASC', 'user_id' => 'ASC']);
+                ->orderBy(['sort_user' => SORT_ASC, 'user_id' => SORT_ASC]);
         }
 
         $dataProvider = new ActiveDataProvider(
@@ -97,6 +97,7 @@ class OrdersController extends \yii\web\Controller
             ->groupBy('kdv_url')
             ->addSelect('order_id, kdv_url, price, caption')
             ->addSelect('SUM([[amount]]) AS amount')
+            ->orderBy(['amount' => SORT_DESC])
         ;
 
         $dataProvider = new ActiveDataProvider(
