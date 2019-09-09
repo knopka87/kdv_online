@@ -8,6 +8,7 @@ $config = [
     'name' => 'KDV.Online',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
+    'language' => 'rus',
     'defaultRoute' => 'orders/list',
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
@@ -46,6 +47,14 @@ $config = [
             ],
         ],
         'db' => $db,
+
+        'i18n' => [
+            'translations' => [
+                '*' => [
+                    'class' => 'yii\i18n\PhpMessageSource'
+                ],
+            ],
+        ],
         
         'urlManager' => [
             'enablePrettyUrl' => true,
