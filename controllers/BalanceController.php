@@ -51,10 +51,12 @@ class BalanceController extends \yii\web\Controller
         if (Yii::$app->request->isPost) {
             $userBalanceLog = new UserBalanceLog();
             $userBalanceLog->load(Yii::$app->request->post());
-            UserBalance::depositBalanse(
+            UserBalance::changeBalance(
                 $userBalanceLog->sum,
                 $userBalanceLog->user_id,
-                $userBalanceLog->order_id
+                $userBalanceLog->order_id,
+                UserBalance::TYPE_DEPOSIT,
+                $userBalanceLog->comment
             );
         }
 
@@ -62,6 +64,31 @@ class BalanceController extends \yii\web\Controller
             'users' => $this->getAllUsers(),
             'orders' => $this->getAllOrders(),
             'balanceList' => $this->getAllBalance(),
+            'model'=> new UserBalanceLog()
+        ]);
+    }
+
+    public function actionDonate() {
+
+        if (Yii::$app->request->isPost) {
+            $userBalanceLog = new UserBalanceLog();
+            $userBalanceLog->load(Yii::$app->request->post());
+            UserBalance::changeBalance(
+                $userBalanceLog->sum,
+                \Yii::$app->user->id,
+                0,
+                UserBalance::TYPE_DONATE
+            );
+            UserBalance::changeBalance(
+                $userBalanceLog->sum,
+                1,
+                0,
+                UserBalance::TYPE_DEPOSIT,
+                'Вам пожертвование от '.Yii::$app->user->identity->username
+            );
+        }
+
+        return $this->render('donate', [
             'model'=> new UserBalanceLog()
         ]);
     }
@@ -90,11 +117,12 @@ class BalanceController extends \yii\web\Controller
     protected function getAllOrders() {
 
         $orderList = Orders::find()
-            ->addSelect(['id'])
+            ->addSelect(['id as value', 'id as label' ])
             ->orderBy('created_at DESC')
+            ->asArray()
             ->all();
 
-        return ArrayHelper::map($orderList,'id','id');
+        return $orderList;
     }
 
     protected function getAllBalance() {

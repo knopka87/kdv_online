@@ -14,7 +14,6 @@ use yii\db\ActiveRecord;
  * @property int $user_id
  * @property string $comment
  * @property int $sum
- * @property int $expire_at
  * @property int $created_at
  * @property int $updated_at
  *
@@ -37,7 +36,7 @@ class UserBalanceLog extends \yii\db\ActiveRecord
     {
         return [
             [['user_id'], 'required'],
-            [['user_id', 'order_id', 'expire_at', 'created_at', 'updated_at'], 'integer'],
+            [['user_id', 'order_id', 'created_at', 'updated_at'], 'integer'],
             [['sum'], 'number'],
             [['comment'], 'string', 'max' => 255],
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => Users::className(), 'targetAttribute' => ['user_id' => 'id']],

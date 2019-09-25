@@ -19,7 +19,6 @@ use yii\db\ActiveRecord;
  * @property int $amount
  * @property double $price
  * @property string $caption
- * @property int $expire_at
  * @property int $created_at
  * @property int $updated_at
  *
@@ -42,7 +41,7 @@ class OrderPositions extends \yii\db\ActiveRecord
     {
         return [
             [['order_id', 'user_id', 'kdv_url', 'amount'], 'required'],
-            [['order_id', 'user_id', 'amount', 'expire_at', 'created_at', 'updated_at'], 'integer'],
+            [['order_id', 'user_id', 'amount', 'created_at', 'updated_at'], 'integer'],
             [['price'], 'number'],
             [['order_id', 'user_id', 'kdv_url'], 'unique', 'targetAttribute' => ['order_id', 'user_id', 'kdv_url']],
             [['kdv_url', 'caption'], 'string', 'max' => 255],
@@ -76,7 +75,6 @@ class OrderPositions extends \yii\db\ActiveRecord
             'amount' => 'Amount',
             'price' => 'Price',
             'caption' => 'Caption',
-            'expire_at' => 'Expire At',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
         ];
@@ -111,7 +109,10 @@ class OrderPositions extends \yii\db\ActiveRecord
         // подключаем phpQuery
         $document = phpQuery::newDocumentHTML($body);
 
-        //Смотрим html страницы Яндекса, определяем внешний класс списка и считываем его командой find
+        if (strpos($document->html(), 'Нет в наличии') !== false) {
+            return false;
+        }
+
         preg_match('#class=.product-cart__price-value[^>]+>(.*)</span>#', $document->html(), $match);
         $price = (float)str_replace(",", ".",$match[1]);
 
@@ -120,19 +121,24 @@ class OrderPositions extends \yii\db\ActiveRecord
         $this->price = $price;
         $this->caption = $caption;
 
+        return true;
     }
 
+
     /**
-     * @inheritdoc
+     * @param int $id id позиции заказа
+     *
+     * @return ActiveRecord
      */
-    public static function findIdentity($id)
+    public static function findIdentity($id): ActiveRecord
     {
         return static::find()
             ->andWhere(['id' => $id])
             ->one();
     }
 
-    public function addPosition() {
+    public function addPosition(): void
+    {
         if (empty($this->order_id.$this->user_id)) {
             return;
         }
@@ -153,10 +159,14 @@ class OrderPositions extends \yii\db\ActiveRecord
             $findPosition->amount = $this->amount;
             //$findPosition->getKdvPageInfo(); // по идее цена не должна обновиться
             $findPosition->update();
+            \Yii::$app->session->setFlash('info', 'Кол-во у товара изменено');
+        }
+        elseif ($this->getKdvPageInfo()) {
+            $this->insert();
+            \Yii::$app->session->setFlash('success', 'Товар успешно добавлен в корзину');
         }
         else {
-            $this->getKdvPageInfo();
-            $this->insert();
+            \Yii::$app->session->setFlash('error', 'Не удалось добавить товар в корзину');
         }
     }
 

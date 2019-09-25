@@ -13,7 +13,6 @@ use yii\db\Expression;
  *
  * @property int $id
  * @property string $status
- * @property int $expire_at
  * @property int $created_at
  * @property int $updated_at
  *
@@ -40,7 +39,7 @@ class Orders extends \yii\db\ActiveRecord
     {
         return [
             [['status'], 'required'],
-            [['expire_at', 'created_at', 'updated_at', 'status'], 'integer'],
+            [['created_at', 'updated_at', 'status'], 'integer'],
         ];
     }
 

@@ -6,6 +6,7 @@ use app\models\query\UserBalanceQuery;
 use Yii;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
+use yii\helpers\Html;
 
 /**
  * This is the model class for table "user_balance".
@@ -13,7 +14,6 @@ use yii\db\ActiveRecord;
  * @property int $id
  * @property int $user_id
  * @property int $balance
- * @property int $expire_at
  * @property int $created_at
  * @property int $updated_at
  *
@@ -21,6 +21,10 @@ use yii\db\ActiveRecord;
  */
 class UserBalance extends \yii\db\ActiveRecord
 {
+
+    const TYPE_DEPOSIT = 1;
+    const TYPE_WRITE_OFF = 2;
+    const TYPE_DONATE = 3;
     /**
      * {@inheritdoc}
      */
@@ -38,7 +42,7 @@ class UserBalance extends \yii\db\ActiveRecord
             [['user_id'], 'required'],
             [['user_id'], 'unique'],
             [['balance'], 'number'],
-            [['user_id', 'expire_at', 'created_at', 'updated_at'], 'integer'],
+            [['user_id', 'created_at', 'updated_at'], 'integer'],
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => Users::className(), 'targetAttribute' => ['user_id' => 'id']],
         ];
     }
@@ -84,33 +88,38 @@ class UserBalance extends \yii\db\ActiveRecord
             ->one();
     }
 
-    public function writeOffs($sum, $orderId) {
-        $this->balance -= $sum;
-        $this->save();
 
-        $balanceLog = new UserBalanceLog();
-        $balanceLog->user_id = $this->user_id;
-        $balanceLog->order_id = $orderId;
-        $balanceLog->sum = -round($sum, 2);
-        $balanceLog->comment = 'Списание за заказ №'.$orderId;
-        $balanceLog->insert();
-    }
-
-    public static function depositBalanse($sum, $userId, $orderId) {
+    public static function changeBalance($sum, $userId, $orderId, $type = self::TYPE_DEPOSIT, $comment = false) {
         $balance = UserBalance::find()->andWhere(['user_id' => $userId])->one();
         if (!$balance) {
             $balance = new UserBalance();
             $balance->user_id = $userId;
         }
-        $balance->balance += round($sum, 2);
+
+        switch ($type) {
+            case self::TYPE_DEPOSIT:
+                $sum = round($sum, 2);
+                $comment = $comment?:'Пополнение баланса за заказ №'.$orderId;
+                break;
+            case self::TYPE_WRITE_OFF:
+                $sum = -round($sum, 2);
+                $comment = $comment?:'Списание за заказ №'.$orderId;
+                break;
+            case self::TYPE_DONATE:
+                $sum = -round($sum, 2);
+                $comment = $comment?:'Добровольный взнос на развитие проекта. Ну или просто, чтобы Сашке лучше жилось)';
+                break;
+        }
+
+        $balance->balance += $sum;
         $balance->save();
 
         $balanceLog = new UserBalanceLog();
         $balanceLog->user_id = $userId;
         $balanceLog->order_id = $orderId;
-        $balanceLog->sum = round($sum, 2);
-        $balanceLog->comment = 'Пополнение баланса за заказ №'.$orderId;
-        $balanceLog->save();
+        $balanceLog->sum = $sum;
+        $balanceLog->comment = $comment;
+        $balanceLog->insert();
 
     }
 
@@ -123,7 +132,26 @@ class UserBalance extends \yii\db\ActiveRecord
             $class = 'danger';
         }
 
-        return '<button class="btn btn-'.$class.'" style="margin: 8px 0;">Баланс: ' . (float)round($balance, 2) . ' р.</button>';
+        return Html::a(
+            'Баланс: ' . (float)round($balance, 2) . ' р.',
+            UserBalance::getTinkoffLink(),
+            [
+                'class' => 'table-'.$class,
+                'target'=>'_blank',
+                'style' => 'color: #fff;background-color: #449d44;',
+                'title' => 'Пополнить баланс'
+            ]
+        );
 
+    }
+
+    public static function getTinkoffLink() {
+        $link = 'https://www.tinkoff.ru/collectmoney/crowd/yanover.aleksandr1/VBUVf93834/';
+
+        $balance = UserBalance::find()->andWhere(['user_id' => \Yii::$app->user->id])->one()->balance;
+        if ($balance < 0) {
+            $link .= '?moneyAmount='.abs($balance);
+        }
+        return $link;
     }
 }

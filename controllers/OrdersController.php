@@ -139,12 +139,13 @@ class OrdersController extends \yii\web\Controller
         }
 
         foreach ($sumListByUser as $userId => $sum) {
-            $balance = UserBalance::find()->andWhere(['user_id' => $userId])->one();
-            if (!$balance) {
-                $balance = new UserBalance();
-                $balance->user_id = $userId;
-            }
-            $balance->writeOffs($sum, $id); // списание средств со счёта
+                // списание средств со счёта
+            UserBalance::changeBalance(
+                $sum,
+                $userId,
+                $id,
+                UserBalance::TYPE_WRITE_OFF
+            );
         }
 
         Yii::$app->response->redirect(['orders/list']);

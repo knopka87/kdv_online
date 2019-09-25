@@ -32,13 +32,31 @@ AppAsset::register($this);
         'brandLabel' => Yii::$app->name,
         'brandUrl' => Yii::$app->homeUrl,
         'options' => [
-            'class' => 'navbar-inverse navbar-fixed-top',
+            'class' => 'navbar-inverse navbar-fixed-top navbar-collapse',
         ],
     ]);
 
     if (!Yii::$app->user->isGuest) {
-        echo \app\models\UserBalance::getBalanceHtml();
+        $leftItems[] = '<li>'.\app\models\UserBalance::getBalanceHtml(). '</li>';
     }
+
+    $leftItems[] = [
+        'label' => 'Donate',
+        'url' => ['balance/donate'],
+        'linkOptions' => ['style' => 'background-color: #fcf8e3; color: #777;']
+    ];
+    $leftItems[] = [
+        'label' => 'Переход на КДВ',
+        'url' => 'https://kirov.kdvonline.ru',
+        'linkOptions' => ['target' => '_blank', 'style' => 'color: #d80027;']
+    ];
+
+
+
+    echo Nav::widget([
+        'options' => ['class' => 'navbar-nav navbar-left'],
+        'items' => $leftItems
+    ]);
 
     $items = [
             ['label' => 'Авторизоваться', 'url' => ['/site/login']],
@@ -51,7 +69,7 @@ AppAsset::register($this);
             '<li>'
                 . Html::beginForm(['/site/logout'], 'post')
                 . Html::submitButton(
-                    'Logout (' . Yii::$app->user->identity->username . ')',
+                    'Выйти (' . Yii::$app->user->identity->username . ')',
                     ['class' => 'btn btn-link logout']
                 )
                 . Html::endForm()
