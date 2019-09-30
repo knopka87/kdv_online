@@ -126,19 +126,18 @@ class UserBalance extends \yii\db\ActiveRecord
     public static function getBalanceHtml() {
         $balance = UserBalance::find()->andWhere(['user_id' => \Yii::$app->user->id])->one()->balance;
         if ($balance >= 0) {
-            $class = 'success';
+            $color = '#449d44';
         }
         else {
-            $class = 'danger';
+            $color = '#d80027';
         }
 
         return Html::a(
             'Баланс: ' . (float)round($balance, 2) . ' р.',
             UserBalance::getTinkoffLink(),
             [
-                'class' => 'table-'.$class,
                 'target'=>'_blank',
-                'style' => 'color: #fff;background-color: #449d44;',
+                'style' => 'color: #fff;background-color: '.$color.';',
                 'title' => 'Пополнить баланс'
             ]
         );
