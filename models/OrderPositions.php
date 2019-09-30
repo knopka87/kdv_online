@@ -147,7 +147,7 @@ class OrderPositions extends \yii\db\ActiveRecord
             return;
         }
 
-        $findPosition = OrderPositions::find()->andWhere(
+        $findPosition = static::find()->andWhere(
             [
                 'order_id' => $this->order_id,
                 'user_id' => $this->user_id,

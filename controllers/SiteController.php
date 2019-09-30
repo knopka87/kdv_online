@@ -6,11 +6,13 @@ use app\models\SignupForm;
 use app\models\Users;
 use Yii;
 use yii\filters\AccessControl;
+use yii\helpers\ArrayHelper;
 use yii\web\Controller;
 use yii\web\Response;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
+use yii\web\User;
 
 class SiteController extends Controller
 {
@@ -101,6 +103,30 @@ class SiteController extends Controller
         Yii::$app->user->logout();
 
         return $this->goHome();
+    }
+
+    public function actionForget($accessToken) {
+
+        $model = new SignupForm();
+
+        $findUser = Users::find()->andWhere(['accessToken' => $accessToken])->one();
+
+        if (!$findUser) {
+            \Yii::$app->session->setFlash('error', 'Пользователь не найден!');
+        }
+
+        if ($model->load(Yii::$app->request->post())) {
+            if ($user = $model->resetPassword($findUser->username, $model->password)) {
+                if (Yii::$app->getUser()->login($user)) {
+                    return $this->goHome();
+                }
+            }
+        }
+
+        return $this->render('forget', [
+            'user' => $findUser,
+            'model' => $model
+        ]);
     }
 
     public function actionSignup()

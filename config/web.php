@@ -61,8 +61,10 @@ $config = [
             'showScriptName' => false,
             'rules' => [
                 '/' => 'site/index',
+                'site/forget/<accessToken:\S+>' => 'site/forget',
                 'orders/<orderId:\d+>/positions/<action:\w+>/<id:\d+>' => 'positions/<action>',
                 'orders/<action:\S+>/<id:\d+>' => 'orders/<action>',
+                'catalog/<category:\S+>' => 'catalog/items'
 
 
             ],
