@@ -26,7 +26,7 @@ use yii\widgets\Pjax;
 <?= Alert::widget() ?>
 
 <?= $form->field($positionModel, 'kdv_url')->textInput(['placeholder' => "Kdv url"])->label(false);?>&nbsp;
-<?= $form->field($positionModel, 'amount')->textInput(['placeholder' => "Кол-во"])->label(false)?>&nbsp;
+<?= $form->field($positionModel, 'amount')->textInput(['placeholder' => "Общее кол-во"])->label(false)?>&nbsp;
     <button type="submit" class="btn btn-default">Добавить/изменить товар</button>
 <?php \yii\bootstrap\ActiveForm::end();?>
 <br><br>

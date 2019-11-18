@@ -109,9 +109,9 @@ class OrderPositions extends \yii\db\ActiveRecord
         // подключаем phpQuery
         $document = phpQuery::newDocumentHTML($body);
 
-        if (strpos($document->html(), 'Нет в наличии') !== false) {
+        /*if (strpos($document->html(), 'Нет в наличии') !== false) {
             return false;
-        }
+        }*/
 
         preg_match('#class=.product-cart__price-value[^>]+>(.*)</span>#', $document->html(), $match);
         $price = (float)str_replace(",", ".",$match[1]);
@@ -122,6 +122,11 @@ class OrderPositions extends \yii\db\ActiveRecord
         $this->caption = $caption;
 
         return true;
+    }
+
+    public static function getDischangeHTML($number, $decimal = 0) {
+
+        return number_format($number, $decimal, ',', ' ');
     }
 
 

@@ -32,7 +32,7 @@ class BalanceController extends \yii\web\Controller
             [
                 'query' => $balanceQuery,
                 'pagination' => [
-                    'pageSize' => 20
+                    'pageSize' => 10
                 ],
                 'sort' => false,
             ]
@@ -88,6 +88,22 @@ class BalanceController extends \yii\web\Controller
             );
         }
 
+    /*
+        curl_setopt_array($ch = curl_init(), array(
+            CURLOPT_URL => "https://pushall.ru/api.php",
+            CURLOPT_POSTFIELDS => array(
+                "type" => "self",
+                "id" => "92293",
+                "key" => "1711ba86d1e03399bf22a132d26ffdfb",
+                "text" => "Тестовое сообщение",
+                "title" => "Заголовок"
+            ),
+            CURLOPT_SAFE_UPLOAD => true,
+            CURLOPT_RETURNTRANSFER => true
+        ));
+        $return=curl_exec($ch); //получить данные о рассылке
+        curl_close($ch);
+*/
         return $this->render('donate', [
             'model'=> new UserBalanceLog()
         ]);

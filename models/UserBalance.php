@@ -22,9 +22,9 @@ use yii\helpers\Html;
 class UserBalance extends \yii\db\ActiveRecord
 {
 
-    const TYPE_DEPOSIT = 1;
-    const TYPE_WRITE_OFF = 2;
-    const TYPE_DONATE = 3;
+    const TYPE_DEPOSIT = 1; // пополнение баланса
+    const TYPE_WRITE_OFF = 2; // списание с баланса
+    const TYPE_DONATE = 3; // donate
     /**
      * {@inheritdoc}
      */
@@ -119,6 +119,7 @@ class UserBalance extends \yii\db\ActiveRecord
         $balanceLog->order_id = $orderId;
         $balanceLog->sum = $sum;
         $balanceLog->comment = $comment;
+        $balanceLog->type = $type;
         $balanceLog->insert();
 
     }

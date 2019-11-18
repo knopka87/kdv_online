@@ -7,6 +7,7 @@ use app\widgets\Alert;
 use yii\helpers\Html;
 use yii\bootstrap\Nav;
 use yii\bootstrap\NavBar;
+use yii\web\View;
 use yii\widgets\Breadcrumbs;
 use app\assets\AppAsset;
 
@@ -64,6 +65,7 @@ AppAsset::register($this);
     ];
     if (!Yii::$app->user->isGuest) {
         $items = [
+            ['label' => 'Доска почёта', 'url' => ['/statistics/index']],
             ['label' => 'Список заказов', 'url' => ['/orders/list']],
             ['label' => 'Финансы', 'url' => ['/balance/index']],
             '<li>'
@@ -93,7 +95,12 @@ AppAsset::register($this);
     </div>
 </div>
 
-<?php $this->endBody() ?>
+<?php
+    $this->endBody();
+    //$this->registerJsFile('//www.gstatic.com/firebasejs/3.6.8/firebase.js');
+    //$this->registerJsFile('/firebase_subscribe.js');
+?>
 </body>
 </html>
-<?php $this->endPage() ?>
+<?php $this->endPage();
+?>

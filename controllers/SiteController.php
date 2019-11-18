@@ -66,7 +66,7 @@ class SiteController extends Controller
     public function actionIndex()
     {
         if (!Yii::$app->user->isGuest) {
-            Yii::$app->response->redirect(['orders/list']);
+            Yii::$app->response->redirect(['statistics/index']);
         }
         return $this->render('index');
     }
