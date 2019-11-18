@@ -6,6 +6,7 @@ use app\models\OrderPositions;
 use app\models\Orders;
 use app\models\UserBalance;
 use app\models\UserBalanceLog;
+use app\models\Users;
 use Yii;
 use yii\data\ActiveDataProvider;
 
@@ -81,9 +82,22 @@ class OrdersController extends \yii\web\Controller
             ]
         );
 
+        $userList = Users::find()->select(['username', 'id'])->asArray()->all();
+        foreach ($userList as $user) {
+            $users[$user['id']] = $user['username'];
+        }
+
         return $this->render(
             $view,
-            ['order' => $order, 'positionProvider' => $dataProvider, 'positionModel' => $positionModel]
+            [
+                'order' => $order,
+                'users' => $users,
+                'positionProvider' => $dataProvider,
+                'positionModel' => $positionModel,
+                'writeOffList' => UserBalance::topBalanceList('writeOff', $id),
+                'countPositionsList' => OrderPositions::topCountPositionsList($id),
+                'weightList' => OrderPositions::topWeightList($id)
+            ]
         );
     }
 

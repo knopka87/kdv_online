@@ -61,7 +61,7 @@ else {
                 'content' => function ($data) {
                     return $data->amount * $data->price;
                 },
-                'footer' => "<b>" . OrderPositions::getTotalBalance($positionProvider->models) . "</b>",
+                'footer' => "<b>" . OrderPositions::getTotalPrice($positionProvider->models) . "</b>",
             ],
             [
                 'class' => 'yii\grid\ActionColumn',

@@ -154,4 +154,30 @@ class UserBalance extends \yii\db\ActiveRecord
         }
         return $link;
     }
+
+    /**
+     * 3 лучших донатчика/транжиры
+     *
+     * @param string $topType
+     * @return array
+     */
+    public static function topBalanceList($topType, $orderId = 0) {
+
+        if (!in_array($topType, ['writeOff', 'donate'])) {
+            return [];
+        }
+
+        return UserBalanceLog::find()
+            ->select(['user_id','ABS(SUM(`sum`)) as sum'])
+            ->andWhere(
+                OrderPositions::andWhereStatistics($topType).
+                ($orderId>0 ? ' AND order_id = '.$orderId : '')
+            )
+            ->$topType()
+            ->groupBy('user_id')
+            ->orderBy('sum DESC')
+            ->limit(3)
+            ->asArray()
+            ->all();
+    }
 }

@@ -60,7 +60,7 @@ $this->registerCssFile('@web/css/style-75.css');
         <div class="ui-item">
             <div class="bg-green text-center">
                 <h2>Транжиры</h2>
-                <small>Потратил больше все на заказы</small>
+                <small>Потратил больше всех на заказы</small>
             </div>
             <ul class="clearfix">
                 <?foreach ($writeOffList as $key => $writeOff):?>

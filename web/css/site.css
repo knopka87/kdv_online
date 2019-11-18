@@ -118,3 +118,7 @@ a.desc:after {
     display: flex;
     flex-flow: row wrap;
 }
+
+.table tfoot td {
+	white-space: nowrap;
+}

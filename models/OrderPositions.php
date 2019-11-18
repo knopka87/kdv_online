@@ -26,6 +26,19 @@ use yii\db\ActiveRecord;
  */
 class OrderPositions extends \yii\db\ActiveRecord
 {
+    private static $noStat = [
+            'all' => [
+                [
+                    'user_id' => 1,
+                    'order_id' => 6
+                ]
+            ],
+            'donate' => [
+                [
+                    'id' => [187,130,126]
+                ]
+            ]
+        ];
     /**
      * {@inheritdoc}
      */
@@ -41,7 +54,7 @@ class OrderPositions extends \yii\db\ActiveRecord
     {
         return [
             [['order_id', 'user_id', 'kdv_url', 'amount'], 'required'],
-            [['order_id', 'user_id', 'amount', 'created_at', 'updated_at'], 'integer'],
+            [['order_id', 'user_id', 'weight', 'amount', 'created_at', 'updated_at'], 'integer'],
             [['price'], 'number'],
             [['order_id', 'user_id', 'kdv_url'], 'unique', 'targetAttribute' => ['order_id', 'user_id', 'kdv_url']],
             [['kdv_url', 'caption'], 'string', 'max' => 255],
@@ -175,7 +188,7 @@ class OrderPositions extends \yii\db\ActiveRecord
         }
     }
 
-    public static function getTotalBalance($dataProvider) {
+    public static function getTotalPrice($dataProvider) {
 
         $totalBalance = 0;
 
@@ -184,5 +197,70 @@ class OrderPositions extends \yii\db\ActiveRecord
         }
 
         return $totalBalance;
+    }
+
+    public static function getTotalWeight($dataProvider) {
+
+        $totalBalance = 0;
+
+        foreach ($dataProvider as $item){
+            $totalBalance += $item['amount']*$item['weight'];
+        }
+
+        return $totalBalance;
+    }
+
+    public static function topCountPositionsList($orderId = 0) {
+
+        return OrderPositions::find()
+            ->select(['SUM(amount) as count_pos', 'user_id'])
+            ->andWhere(
+                OrderPositions::andWhereStatistics().
+                ($orderId>0 ? ' AND order_id = '.$orderId : '')
+            )
+            ->groupBy('user_id')
+            ->orderBy('count_pos DESC')
+            ->limit(3)
+            ->asArray()
+            ->all();
+    }
+
+    public static function topWeightList($orderId = 0) {
+
+        return OrderPositions::find()
+            ->select(['SUM(amount*weight) as count_pos', 'user_id'])
+            ->andWhere(
+                OrderPositions::andWhereStatistics().
+                ($orderId>0 ? ' AND order_id = '.$orderId : '')
+            )
+            ->groupBy('user_id')
+            ->orderBy('count_pos DESC')
+            ->limit(3)
+            ->asArray()
+            ->all();
+    }
+
+    public static function andWhereStatistics($type = 'all') {
+        switch ($type) {
+            case 'donate' :
+                break;
+            default:
+                $type = 'all';
+                break;
+        }
+        $where = '';
+        foreach (self::$noStat[$type] as $whereList) {
+            $whereOr = [];
+            foreach ($whereList as $field => $value) {
+                if (is_array($value)) {
+                    $whereOr[] = "`{$field}` NOT IN ('".implode("', '", $value). "')";
+                }
+                else {
+                    $whereOr[] = "`{$field}` <> '{$value}'";
+                }
+            }
+            $where .= ' AND (' . implode(' OR ', $whereOr). ')';
+        }
+        return substr($where, 4);
     }
 }

@@ -33,7 +33,7 @@ use yii\helpers\Html;
             'content'=>function($data) {
                 return $data->amount*$data->price;
             },
-            'footer' => '<b>' .OrderPositions::getTotalBalance($positionProvider->models). '</b>',
+            'footer' => '<b>' .OrderPositions::getTotalPrice($positionProvider->models). '</b>',
         ],
     ],
     'showFooter' => true,
