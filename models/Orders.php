@@ -103,5 +103,48 @@ class Orders extends \yii\db\ActiveRecord
         return $this->created_at >= $today && $this->created_at < $tomorrow;
     }
 
+    public static function getTopWeightOrder() {
+
+        return OrderPositions::find()
+            ->addSelect(['*', 'SUM(weight*amount) as weight'])
+            ->addGroupBy('order_id')
+            ->orderBy('weight DESC')
+            ->limit(3)
+            ->asArray()
+            ->all();
+    }
+
+    public static function getTopTotalPriceOrder() {
+
+        return OrderPositions::find()
+            ->addSelect(['*', 'SUM(amount*price) as sum'])
+            ->addGroupBy('order_id')
+            ->orderBy('sum DESC')
+            ->limit(3)
+            ->asArray()
+            ->all();
+    }
+
+    public static function getTopCountPositions() {
+
+        return OrderPositions::find()
+            ->addSelect(['*', 'SUM(amount) as sum'])
+            ->addGroupBy('order_id')
+            ->orderBy('sum DESC')
+            ->limit(3)
+            ->asArray()
+            ->all();
+    }
+
+    public static function getTopCountUsers() {
+
+        return OrderPositions::find()
+            ->addSelect(['order_id', 'COUNT(DISTINCT user_id) as sum'])
+            ->addGroupBy('order_id')
+            ->orderBy('sum DESC')
+            ->limit(3)
+            ->asArray()
+            ->all();
+    }
 
 }

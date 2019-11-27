@@ -64,12 +64,15 @@ class OrdersController extends \yii\web\Controller
                 ->andWhere(['order_id' => $id,'user_id' => Yii::$app->user->id]);
 
         }
-        else {
+        elseif ($order->status == Orders::STATUS_CLOSE) {
             $view = 'view';
             $positionsQuery = OrderPositions::find()
                 ->addSelect(['*', 'IF(user_id = '.Yii::$app->user->id.', 0, 1) as sort_user'])
                 ->andWhere(['order_id' => $id])
                 ->orderBy(['sort_user' => SORT_ASC, 'user_id' => SORT_ASC]);
+        }
+        else {
+            return ''; // заказ не активен
         }
 
         $dataProvider = new ActiveDataProvider(
@@ -87,18 +90,23 @@ class OrdersController extends \yii\web\Controller
             $users[$user['id']] = $user['username'];
         }
 
-        return $this->render(
-            $view,
-            [
-                'order' => $order,
-                'users' => $users,
-                'positionProvider' => $dataProvider,
-                'positionModel' => $positionModel,
-                'writeOffList' => UserBalance::topBalanceList('writeOff', $id),
-                'countPositionsList' => OrderPositions::topCountPositionsList($id),
-                'weightList' => OrderPositions::topWeightList($id)
-            ]
-        );
+        $params = [
+            'order' => $order,
+            'users' => $users,
+            'positionProvider' => $dataProvider,
+            'positionModel' => $positionModel,
+        ];
+
+        if ($order->status == Orders::STATUS_CLOSE) {
+            $params['writeOffList'] = UserBalance::topBalanceList('writeOff', $id);
+            $params['countPositionsList'] = OrderPositions::topCountPositionsList($id);
+            $params['weightList'] = OrderPositions::topWeightList($id);
+        }
+        elseif ($order->status == Orders::STATUS_ACTIVE) {
+            $params['topUsedPosition'] = OrderPositions::getTopUsedPosition(Yii::$app->user->id);
+        }
+
+        return $this->render($view, $params);
     }
 
     public function actionAdminList($id) {

@@ -123,6 +123,7 @@ class OrderPositions extends \yii\db\ActiveRecord
         $document = phpQuery::newDocumentHTML($body);
 
         /*if (strpos($document->html(), 'Нет в наличии') !== false) {
+            \Yii::$app->session->setFlash('error', 'Товара нет в наличии!');
             return false;
         }*/
 
@@ -130,9 +131,15 @@ class OrderPositions extends \yii\db\ActiveRecord
         $price = (float)str_replace(",", ".",$match[1]);
 
         $caption = $document->find('.product-description')->children('div')->children('h1')->html();
+        preg_match('/[^\d]*([0-9,]*).(г|кг).*/ui', $caption, $output);
+        $weight = str_replace(',', '.', $output[1]);
+        if ($output[2] === 'кг') {
+			$weight *= 1000;
+        }
 
         $this->price = $price;
         $this->caption = $caption;
+        $this->weight = $weight;
 
         return true;
     }
@@ -182,9 +189,6 @@ class OrderPositions extends \yii\db\ActiveRecord
         elseif ($this->getKdvPageInfo()) {
             $this->insert();
             \Yii::$app->session->setFlash('success', 'Товар успешно добавлен в корзину');
-        }
-        else {
-            \Yii::$app->session->setFlash('error', 'Не удалось добавить товар в корзину');
         }
     }
 
@@ -262,5 +266,46 @@ class OrderPositions extends \yii\db\ActiveRecord
             $where .= ' AND (' . implode(' OR ', $whereOr). ')';
         }
         return substr($where, 4);
+    }
+
+    public static function getTopUsedPosition($userId) {
+
+        $userId = (int)$userId;
+        if ($userId <= 0) {
+            return [];
+        }
+        return static::find()
+            ->addSelect(['*', 'COUNT(id) as count'])
+            ->andWhere(
+                ['user_id' => $userId]
+            )
+            ->andHaving('`count` > 2')
+            ->groupBy('kdv_url')
+            ->limit(10)
+            ->orderBy('count DESC')
+            ->asArray()
+            ->all();
+    }
+
+    public static function getPopularPositions() {
+
+        return static::find()
+            ->addSelect(['*', 'COUNT(id) as count'])
+            ->addGroupBy('kdv_url')
+            ->orderBy('count DESC')
+            ->limit(3)
+            ->asArray()
+            ->all();
+    }
+
+    public static function getTopAmountPositions() {
+
+        return static::find()
+            ->addSelect(['*', 'SUM(amount) as count'])
+            ->addGroupBy('kdv_url')
+            ->orderBy('count DESC')
+            ->limit(3)
+            ->asArray()
+            ->all();
     }
 }

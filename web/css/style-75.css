@@ -524,7 +524,7 @@ body{
 	background:#f4f8fd;
 }
 .ui-75{
-	margin:60px 0px;
+	margin-bottom: 30px;
 }
 /* Column Mobile */
 @media(max-width: 500px){
@@ -534,7 +534,7 @@ body{
 }
 /* Item */
 .ui-75 .ui-item{
-	max-width: 260px;
+	/*max-width: 260px;*/
 	margin:30px auto;
 	background:#fff;
 }

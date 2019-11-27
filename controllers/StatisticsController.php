@@ -3,6 +3,7 @@
 namespace app\controllers;
 
 use app\models\OrderPositions;
+use app\models\Orders;
 use app\models\UserBalance;
 use app\models\Users;
 
@@ -19,9 +20,15 @@ class StatisticsController extends \yii\web\Controller
             [
                 'users' => $users,
                 'writeOffList' => UserBalance::topBalanceList('writeOff'),
-                'countPositionsList' => OrderPositions::topCountPositionsList(),
+                'countPositionsListByUser' => OrderPositions::topCountPositionsList(),
                 'donateList' => UserBalance::topBalanceList('donate'),
-                'weightList' => OrderPositions::topWeightList()
+                'weightListByUser' => OrderPositions::topWeightList(),
+                'weightListByOrder' => Orders::getTopWeightOrder(),
+                'countPositionsListByOrder' => Orders::getTopCountPositions(),
+                'totalPriceListByOrder' => Orders::getTopTotalPriceOrder(),
+                'countUsersListByOrder' => Orders::getTopCountUsers(),
+                'popularPositions' => OrderPositions::getPopularPositions(),
+                'topAmountPositions' => OrderPositions::getTopAmountPositions()
             ]);
     }
 }

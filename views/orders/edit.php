@@ -26,7 +26,7 @@ use yii\widgets\Pjax;
 <?= Alert::widget() ?>
 
 <?= $form->field($positionModel, 'kdv_url')->textInput(['placeholder' => "Kdv url"])->label(false);?>&nbsp;
-<?= $form->field($positionModel, 'amount')->textInput(['placeholder' => "Общее кол-во"])->label(false)?>&nbsp;
+<?= $form->field($positionModel, 'amount')->textInput(['placeholder' => "Общее кол-во", 'value' => '1', 'type' => 'number'])->label(false)?>&nbsp;
     <button type="submit" class="btn btn-default">Добавить/изменить товар</button>
 <?php \yii\bootstrap\ActiveForm::end();?>
 <br><br>
@@ -84,6 +84,30 @@ else {
         'summary' => false,
     ]);
 }?>
+<?if (!empty($topUsedPosition)):?>
+<br>
+<h2>Твои любимые товары</h2>
+<br>
+<?foreach ($topUsedPosition as $item):?>
+        <div class="row">
+            <?php $form = \yii\bootstrap\ActiveForm::begin([
+                'layout' => 'inline',
+                'id' => 'PositionsUpdateForm',
+            ])?>
+
+            <?= $form->field($positionModel, 'kdv_url')->hiddenInput(['value' => $item['kdv_url']])?>
+            <div class="col-md-7 col-sm-7 col-xs-7 col-mob">
+                <a href="<?=$item['kdv_url']?>" target="_blank"><?=$item['caption']?></a>
+            </div>
+            <div class="col-md-5 col-sm-5 col-xs-5 col-mob">
+            <?= $form->field($positionModel, 'amount')->textInput(['placeholder' => "Общее кол-во", 'value' => '1','type' => 'number'])->label(false)?>&nbsp;
+            <button type="submit" class="btn btn-default">Добавить/изменить товар</button>
+            </div>
+            <?php \yii\bootstrap\ActiveForm::end();?>
+        </div>
+<?endforeach;?>
+
+<?endif;?>
 <?php
 Pjax::end();
 

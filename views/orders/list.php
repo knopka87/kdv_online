@@ -22,7 +22,7 @@ $columns = [
         'format'=>'date', // Доступные модификаторы - date:datetime:time
         'content'=>function($data) {
             $content = Html::a(
-                    'Заказ от ' . \Yii::$app->formatter->asDate($data->created_at, 'php:d.m.Y'),
+                    'Заказ №'.$data->id.' от ' . \Yii::$app->formatter->asDate($data->created_at, 'php:d.m.Y'),
                     \yii\helpers\Url::to(['orders/view', 'id' => $data->id])
             );
 
