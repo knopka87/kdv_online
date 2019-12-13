@@ -21,17 +21,16 @@ use yii\widgets\Pjax;
     <button type="submit" class="btn btn-primary">
         <?=$ordersUsersStatus=='new'?'Участвую в заказе!':'Хочу изменить заказ!!'?></button>
 <?php \yii\bootstrap\ActiveForm::end();?>
-    <br><br>
 <?php
-if (Yii::$app->user->identity->isAdmin()) {
+if (!empty($whoIsProcessing)) {
     echo '<h2>Ещё заказывают</h2>';
     /** @var OrdersUsers[] $whoIsProcessing */
     foreach ($whoIsProcessing as $ordersUsers) {
         echo $ordersUsers->user->username. ' ';
     }
-    echo '<br><br>';
 }
 ?>
+    <br><br>
 <?php
 if ($ordersUsersStatus == 'done') {
     if (!$positionProvider) {

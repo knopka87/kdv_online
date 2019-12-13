@@ -8,13 +8,10 @@ use app\models\Tokens;
 use app\models\Users;
 use Yii;
 use yii\filters\AccessControl;
-use yii\helpers\ArrayHelper;
 use yii\web\Controller;
 use yii\web\Response;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
-use app\models\ContactForm;
-use yii\web\User;
 
 class SiteController extends Controller
 {
@@ -175,7 +172,8 @@ class SiteController extends Controller
         }
 
         $notification = new Notification();
-
+        $res = null;
+        
         $request = Yii::$app->request;
         if ($post = $request->post()) {
             $notification->title = $post['Notification']['title'];

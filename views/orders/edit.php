@@ -20,17 +20,16 @@ use yii\widgets\Pjax;
 <?=$form->field($ordersUsersModel, 'status')->hiddenInput(['value' => OrdersUsers::STATUS_DONE]);?>&nbsp;
     <button type="submit" class="btn btn-primary">Я всё!! На сегодня хватит!</button>
 <?php \yii\bootstrap\ActiveForm::end();?>
-    <br><br>
 <?php
-if (Yii::$app->user->identity->isAdmin()) {
+if (!empty($whoIsProcessing)) {
     echo '<h2>Ещё заказывают</h2>';
     /** @var OrdersUsers[] $whoIsProcessing */
     foreach ($whoIsProcessing as $ordersUsers) {
         echo $ordersUsers->user->username. ' ';
     }
-    echo '<br><br>';
 }
 ?>
+    <br><br>
 <?php
     Pjax::begin([
     'formSelector' => '#PositionsUpdateForm'
