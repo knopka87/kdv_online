@@ -9,7 +9,7 @@
 namespace app\models;
 
 
-class PTotal
+class Tools
 {
 
     public static function pageTotal($provider, $fieldName)
@@ -20,4 +20,5 @@ class PTotal
         }
         return $total;
     }
+
 }

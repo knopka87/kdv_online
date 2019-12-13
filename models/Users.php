@@ -227,4 +227,12 @@ class Users extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
 
         return $this->role === Users::ROLE_ADMINISTRATOR;
     }
+    
+    public function getUserNames() {
+		$userList = self::find()->select(['username', 'id'])->asArray()->all();
+        foreach ($userList as $user) {
+            $users[$user['id']] = $user['username'];
+        }
+        return $users;
+    }
 }

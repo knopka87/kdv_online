@@ -1,7 +1,13 @@
 <?php
-/* @var $this yii\web\View */
+/**
+ * @var $this yii\web\View
+ * @var array $donateList
+ * @var array $users
+ *
+**/
 
 use app\models\OrderPositions;
+use yii\helpers\Html;
 
 $this->registerCssFile('@web/css/style-75.css');
 ?>
@@ -16,12 +22,12 @@ $this->registerCssFile('@web/css/style-75.css');
                 <small>Больше всех внесли пожертвований</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($donateList as $key => $donate):?>
+                <?php foreach ($donateList as $donate) :?>
                 <li>
                     <?=$users[$donate['user_id']]?>
                     <span><?=OrderPositions::getDischangeHTML($donate['sum'], 2)?> р.</span>
                 </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
@@ -32,12 +38,12 @@ $this->registerCssFile('@web/css/style-75.css');
                 <small>Больше всех заказали единиц товара</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($countPositionsListByUser as $key => $countPositions):?>
+                <?php foreach ($countPositionsListByUser as $countPositions):?>
                     <li>
                         <?=$users[$countPositions['user_id']]?>
                         <span><?=$countPositions['count_pos']?> шт.</span>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
@@ -48,12 +54,12 @@ $this->registerCssFile('@web/css/style-75.css');
                 <small>Больше всех заказали по весу</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($weightListByUser as $key => $weight):?>
+                <?php foreach ($weightListByUser as $key => $weight):?>
                     <li>
                         <?=$users[$weight['user_id']]?>
                         <span><?=OrderPositions::getDischangeHTML($weight['count_pos']/1000, 3)?> кг.</span>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
@@ -64,12 +70,12 @@ $this->registerCssFile('@web/css/style-75.css');
                 <small>Потратил больше всех на заказы</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($writeOffList as $key => $writeOff):?>
+                <?php foreach ($writeOffList as $key => $writeOff):?>
                     <li>
                         <?=$users[$writeOff['user_id']]?>
                         <span><?=OrderPositions::getDischangeHTML($writeOff['sum'], 2)?> р.</span>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
@@ -83,12 +89,15 @@ $this->registerCssFile('@web/css/style-75.css');
                 <small>Больше всех покупателей в заказе</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($countUsersListByOrder as $countUser):?>
+                <?php foreach ($countUsersListByOrder as $countUser):?>
                     <li>
-                        Заказ №<?=$countUser['order_id']?>
+                        <?=Html::a(
+                        'Заказ №'.$countUser['order_id'],
+                        \yii\helpers\Url::to(['orders/view', 'id' => $countUser['order_id']])
+                        )?>
                         <span><?=$countUser['sum']?> чел.</span>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
@@ -99,12 +108,15 @@ $this->registerCssFile('@web/css/style-75.css');
                 <small>Больше всех единиц товара в заказе</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($countPositionsListByOrder as $key => $countPositions):?>
+                <?php foreach ($countPositionsListByOrder as $key => $countPositions):?>
                     <li>
-                        Заказ №<?=$countPositions['order_id']?>
+                        <?=Html::a(
+                        'Заказ №'.$countPositions['order_id'],
+                        \yii\helpers\Url::to(['orders/view', 'id' => $countPositions['order_id']])
+                        )?>
                         <span><?=$countPositions['sum']?> шт.</span>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
@@ -115,12 +127,15 @@ $this->registerCssFile('@web/css/style-75.css');
                 <small>Самые тяжёлые заказы</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($weightListByOrder as $key => $weight):?>
+                <?php foreach ($weightListByOrder as $key => $weight):?>
                     <li>
-                        Заказ №<?=$weight['order_id']?>
+                        <?=Html::a(
+                        'Заказ №'.$weight['order_id'],
+                        \yii\helpers\Url::to(['orders/view', 'id' => $weight['order_id']])
+                        )?>
                         <span><?=OrderPositions::getDischangeHTML($weight['weight']/1000, 3)?> кг.</span>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
@@ -131,59 +146,68 @@ $this->registerCssFile('@web/css/style-75.css');
                 <small>Самые дорогие заказы</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($totalPriceListByOrder as $totalPrice):?>
+                <?php foreach ($totalPriceListByOrder as $totalPrice):?>
                     <li>
-                        Заказ №<?=$totalPrice['order_id']?>
+                        <?=Html::a(
+                        'Заказ №'.$totalPrice['order_id'],
+                        \yii\helpers\Url::to(['orders/view', 'id' => $totalPrice['order_id']])
+                        )?>
                         <span><?=OrderPositions::getDischangeHTML($totalPrice['sum'], 2)?> р.</span>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
 </div>
 <h2>Товары</h2>
 <div class="row ui-75">
-    <div class="col-md-4 col-sm-6 col-xs-6 col-mob">
+    <div class="col-md-6 col-sm-6 col-xs-6 col-mob">
         <div class="ui-item">
             <div class="bg-green text-center">
                 <h2>Любимчик</h2>
                 <small>Больше всех раз заказывали</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($popularPositions as $position):?>
+                <?php foreach ($popularPositions as $position):?>
                     <li>
                         <div class="row">
                             <div class="col-md-9">
-                                <?=$position['caption']?>
+                                <?=Html::a(
+                                    $position['caption'],
+                                    $position['kdv_url']
+                                )?>
                             </div>
                             <div class="col-md-3">
                                 <?=$position['count']?> раз.
                             </div>
                         </div>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
-    <div class="col-md-4 col-sm-6 col-xs-6 col-mob">
+    <div class="col-md-6 col-sm-6 col-xs-6 col-mob">
         <div class="ui-item">
             <div class="bg-green text-center">
                 <h2>Любимчик 2</h2>
                 <small>Больше всего штук было заказано</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($topAmountPositions as $position):?>
+                <?php foreach ($topAmountPositions as $position):?>
                     <li>
                         <div class="row">
                             <div class="col-md-9">
-                                <?=$position['caption']?>
+                                <?=Html::a(
+                                    $position['caption'],
+                                    $position['kdv_url']
+                                )?>
                             </div>
                             <div class="col-md-3">
                                 <?=$position['count']?> шт.
                             </div>
                         </div>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>

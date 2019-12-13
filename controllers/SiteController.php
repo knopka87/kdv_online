@@ -2,7 +2,9 @@
 
 namespace app\controllers;
 
+use app\models\Notification;
 use app\models\SignupForm;
+use app\models\Tokens;
 use app\models\Users;
 use Yii;
 use yii\filters\AccessControl;
@@ -146,6 +148,54 @@ class SiteController extends Controller
         ]);
     }
 
+    public function actionSaveToken() {
+
+        $request = Yii::$app->request;
+        if ($post = $request->post()) {
+            $token = new Tokens();
+            if ($token->load($post, '')) {
+                $findToken = Tokens::find()->andWhere(['token' => $token->token])->one();
+                if ($findToken) {
+                    // по идее не должны сюда попадать..
+                    $findToken->user_id = $token->user_id;
+                    $findToken->update();
+                }
+                else {
+                    $token->insert();
+                }
+
+            }
+        }
+    }
+
+    public function actionNotification() {
+
+        if (!Yii::$app->user->identity->isAdmin()) {
+            Yii::$app->response->redirect(['site/index']);
+        }
+
+        $notification = new Notification();
+
+        $request = Yii::$app->request;
+        if ($post = $request->post()) {
+            $notification->title = $post['Notification']['title'];
+            $notification->body = $post['Notification']['body'];
+            $notification->clickAction = $post['Notification']['click_action'];
+            $res = $notification->send();
+
+            if ($res) {
+                Yii::$app->session->setFlash('success', 'Сообщение успешно отправлено');
+            }
+            else {
+                Yii::$app->session->setFlash('error', 'Сообщение не удалось отправить');
+            }
+
+        }
+
+        return $this->render('notification', ['notificationModel' => $notification, 'res' => $res]);
+    }
+
+    /*
     public function actionAddAdmin(){
         $model = Users::find()->where(['username' => 'a.yanover'])->one();
         if (empty($model)) {
@@ -158,5 +208,5 @@ class SiteController extends Controller
                 echo 'good';
             }
         }
-    }
+    }*/
 }

@@ -2,7 +2,7 @@
 /* @var $this yii\web\View */
 
 use app\models\OrderPositions;
-use app\models\PTotal;
+use app\models\Tools;
 use yii\grid\GridView;
 use yii\helpers\Html;
 
@@ -57,7 +57,7 @@ $columns = [
             }
             return $content;
         },
-        'footer' => "<b>" . PTotal::pageTotal($positionProvider->models, 'amount') . "</b>",
+        'footer' => "<b>" . Tools::pageTotal($positionProvider->models, 'amount') . "</b>",
     ],
     [
         'attribute'=>'price',
@@ -115,12 +115,12 @@ echo GridView::widget([
                 <small>Больше всех заказали единиц товара</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($countPositionsList as $key => $countPositions):?>
+                <?php foreach ($countPositionsList as $key => $countPositions):?>
                     <li>
                         <?=$users[$countPositions['user_id']]?>
                         <span><?=$countPositions['count_pos']?> шт.</span>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
@@ -131,12 +131,12 @@ echo GridView::widget([
                 <small>Больше всех заказали по весу</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($weightList as $key => $weight):?>
+                <?php foreach ($weightList as $key => $weight):?>
                     <li>
                         <?=$users[$weight['user_id']]?>
                         <span><?=OrderPositions::getDischangeHTML($weight['count_pos']/1000, 3)?> кг.</span>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>
@@ -147,12 +147,12 @@ echo GridView::widget([
                 <small>Потратил больше всех на заказ</small>
             </div>
             <ul class="clearfix">
-                <?foreach ($writeOffList as $key => $writeOff):?>
+                <?php foreach ($writeOffList as $key => $writeOff):?>
                     <li>
                         <?=$users[$writeOff['user_id']]?>
                         <span><?=OrderPositions::getDischangeHTML($writeOff['sum'], 2)?> р.</span>
                     </li>
-                <?endforeach;?>
+                <?php endforeach;?>
             </ul>
         </div>
     </div>

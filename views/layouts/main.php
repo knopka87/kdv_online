@@ -71,12 +71,12 @@ AppAsset::register($this);
             '<li>'
                 . Html::beginForm(['/site/logout'], 'post')
                 . Html::submitButton(
-                    'Выйти (' . Yii::$app->user->identity->username . ')',
+                    'Выйти (<span id="username" data-id="'.Yii::$app->user->id.'">' . Yii::$app->user->identity->username . '</span>)',
                     ['class' => 'btn btn-link logout']
                 )
                 . Html::endForm()
                 . '</li>',
-            '<li>'.'</li>'
+            '<li><a href="#" id="subscribe" class="glyphicon glyphicon-envelope" style="color: white;" title="Подписаться на уведомления"></a></li>'
         ];
     }
     echo Nav::widget([
@@ -93,12 +93,13 @@ AppAsset::register($this);
         <?= Alert::widget() ?>
         <?= $content ?>
     </div>
+
 </div>
 
 <?php
     $this->endBody();
-    //$this->registerJsFile('//www.gstatic.com/firebasejs/3.6.8/firebase.js');
-    //$this->registerJsFile('/firebase_subscribe.js');
+    $this->registerJsFile('//www.gstatic.com/firebasejs/3.6.8/firebase.js');
+    $this->registerJsFile('/firebase_subscribe.js');
 ?>
 </body>
 </html>

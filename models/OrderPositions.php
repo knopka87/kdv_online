@@ -35,7 +35,7 @@ class OrderPositions extends \yii\db\ActiveRecord
             ],
             'donate' => [
                 [
-                    'id' => [187,130,126]
+                    'id' => [187,130,126, 244]
                 ]
             ]
         ];
@@ -214,14 +214,20 @@ class OrderPositions extends \yii\db\ActiveRecord
         return $totalBalance;
     }
 
-    public static function topCountPositionsList($orderId = 0) {
+    public static function topCountPositionsList($orderId = 0)
+    {
 
         return OrderPositions::find()
-            ->select(['SUM(amount) as count_pos', 'user_id'])
+            ->select(['SUM(amount) as count_pos', 'user_id', 'order_id'])
             ->andWhere(
-                OrderPositions::andWhereStatistics().
-                ($orderId>0 ? ' AND order_id = '.$orderId : '')
+                OrderPositions::andWhereStatistics() .
+                ($orderId > 0 ? ' AND order_id = ' . $orderId : '')
             )
+            ->joinWith([
+                'order' => function ($query) {
+                    $query->andWhere(['status' => Orders::STATUS_DONE]);
+                }
+            ])
             ->groupBy('user_id')
             ->orderBy('count_pos DESC')
             ->limit(3)
@@ -229,14 +235,20 @@ class OrderPositions extends \yii\db\ActiveRecord
             ->all();
     }
 
-    public static function topWeightList($orderId = 0) {
+    public static function topWeightList($orderId = 0)
+    {
 
         return OrderPositions::find()
-            ->select(['SUM(amount*weight) as count_pos', 'user_id'])
+            ->select(['SUM(amount*weight) as count_pos', 'user_id', 'order_id'])
             ->andWhere(
-                OrderPositions::andWhereStatistics().
-                ($orderId>0 ? ' AND order_id = '.$orderId : '')
+                OrderPositions::andWhereStatistics() .
+                ($orderId > 0 ? ' AND order_id = ' . $orderId : '')
             )
+            ->with([
+                'order' => function ($query) {
+                    $query->andWhere(['status' => Orders::STATUS_DONE]);
+                }
+            ])
             ->groupBy('user_id')
             ->orderBy('count_pos DESC')
             ->limit(3)
@@ -244,7 +256,8 @@ class OrderPositions extends \yii\db\ActiveRecord
             ->all();
     }
 
-    public static function andWhereStatistics($type = 'all') {
+    public static function andWhereStatistics($type = 'all')
+    {
         switch ($type) {
             case 'donate' :
                 break;
@@ -257,13 +270,12 @@ class OrderPositions extends \yii\db\ActiveRecord
             $whereOr = [];
             foreach ($whereList as $field => $value) {
                 if (is_array($value)) {
-                    $whereOr[] = "`{$field}` NOT IN ('".implode("', '", $value). "')";
-                }
-                else {
+                    $whereOr[] = "`{$field}` NOT IN ('" . implode("', '", $value) . "')";
+                } else {
                     $whereOr[] = "`{$field}` <> '{$value}'";
                 }
             }
-            $where .= ' AND (' . implode(' OR ', $whereOr). ')';
+            $where .= ' AND (' . implode(' OR ', $whereOr) . ')';
         }
         return substr($where, 4);
     }
@@ -279,6 +291,10 @@ class OrderPositions extends \yii\db\ActiveRecord
             ->andWhere(
                 ['user_id' => $userId]
             )
+            ->with(['order' => function ($query) {
+				$query->andWhere(['status' => Orders::STATUS_DONE]);
+				}
+			])
             ->andHaving('`count` > 2')
             ->groupBy('kdv_url')
             ->limit(10)
@@ -292,6 +308,10 @@ class OrderPositions extends \yii\db\ActiveRecord
         return static::find()
             ->addSelect(['*', 'COUNT(id) as count'])
             ->addGroupBy('kdv_url')
+            ->with(['order' => function ($query) {
+				$query->andWhere(['status' => Orders::STATUS_DONE]);
+				}
+			])
             ->orderBy('count DESC')
             ->limit(3)
             ->asArray()
@@ -303,6 +323,10 @@ class OrderPositions extends \yii\db\ActiveRecord
         return static::find()
             ->addSelect(['*', 'SUM(amount) as count'])
             ->addGroupBy('kdv_url')
+            ->with(['order' => function ($query) {
+				$query->andWhere(['status' => Orders::STATUS_DONE]);
+				}
+			])
             ->orderBy('count DESC')
             ->limit(3)
             ->asArray()

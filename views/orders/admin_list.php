@@ -14,7 +14,7 @@ use yii\helpers\Html;
             'attribute' => 'kdv_url',
             'label' => 'Товар',
             'content' => function($data) {
-                return Html::a($data->caption, $data->kdv_url, ['target' => '_blank']);
+                return Html::a($data['caption'], $data['kdv_url'], ['target' => '_blank']);
             },
             'footer' => '<b>Итого:</b>',
         ],
@@ -31,9 +31,16 @@ use yii\helpers\Html;
             'attribute' => 'total',
             'label' => 'Сумма',
             'content'=>function($data) {
-                return $data->amount*$data->price;
+                return $data['amount']*$data['price'];
             },
             'footer' => '<b>' .OrderPositions::getTotalPrice($positionProvider->models). '</b>',
+        ],
+        [
+            'attribute' => 'users',
+            'label' => 'Пользователи',
+            'content'=>function($data) {
+            	return $data['username'];
+            },
         ],
     ],
     'showFooter' => true,

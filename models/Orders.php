@@ -22,7 +22,8 @@ class Orders extends \yii\db\ActiveRecord
 {
     const STATUS_NOT_ACTIVE = 1;
     const STATUS_ACTIVE = 2;
-    const STATUS_CLOSE = 3;
+    const STATUS_DONE = 3;
+    const STATUS_BASKET = 4;
 
     /**
      * {@inheritdoc}
@@ -64,8 +65,6 @@ class Orders extends \yii\db\ActiveRecord
     }
 
     /**
-     * {@inheritdoc}
-     *
      * @return OrdersQuery the active query used by this AR class.
      */
     public static function find()
@@ -74,7 +73,8 @@ class Orders extends \yii\db\ActiveRecord
     }
 
     /**
-     * @inheritdoc
+     * @param $id
+     * @return Orders|null
      */
     public static function findIdentity($id)
     {
@@ -84,6 +84,9 @@ class Orders extends \yii\db\ActiveRecord
             ->one();
     }
 
+    /**
+     * @return Orders|null
+     */
     public static function findTodayOrder() {
 
         $today = strtotime(date('d.m.Y'));
@@ -95,6 +98,9 @@ class Orders extends \yii\db\ActiveRecord
             ->one();
     }
 
+    /**
+     * @return bool
+     */
     public function isTodayOrder() {
 
         $today = strtotime(date('d.m.Y'));
@@ -103,48 +109,91 @@ class Orders extends \yii\db\ActiveRecord
         return $this->created_at >= $today && $this->created_at < $tomorrow;
     }
 
+    /**
+     * @return array
+     */
     public static function getTopWeightOrder() {
 
         return OrderPositions::find()
             ->addSelect(['*', 'SUM(weight*amount) as weight'])
             ->addGroupBy('order_id')
+            ->with(['order' => function ($query) {
+				$query->andWhere(['status' => Orders::STATUS_DONE]);
+				}
+			])
             ->orderBy('weight DESC')
             ->limit(3)
             ->asArray()
             ->all();
     }
 
+    /**
+     * @return array
+     */
     public static function getTopTotalPriceOrder() {
 
         return OrderPositions::find()
             ->addSelect(['*', 'SUM(amount*price) as sum'])
             ->addGroupBy('order_id')
+            ->with(['order' => function ($query) {
+				$query->andWhere(['status' => Orders::STATUS_DONE]);
+				}
+			])
             ->orderBy('sum DESC')
             ->limit(3)
             ->asArray()
             ->all();
     }
 
+    /**
+     * @return array
+     */
     public static function getTopCountPositions() {
 
         return OrderPositions::find()
             ->addSelect(['*', 'SUM(amount) as sum'])
             ->addGroupBy('order_id')
+            ->with(['order' => function ($query) {
+				$query->andWhere(['status' => Orders::STATUS_DONE]);
+				}
+			])
             ->orderBy('sum DESC')
             ->limit(3)
             ->asArray()
             ->all();
     }
 
+    /**
+     * @return array
+     */
     public static function getTopCountUsers() {
 
         return OrderPositions::find()
             ->addSelect(['order_id', 'COUNT(DISTINCT user_id) as sum'])
+            ->with(['order' => function ($query) {
+				$query->andWhere(['status' => Orders::STATUS_DONE]);
+				}
+			])
             ->addGroupBy('order_id')
             ->orderBy('sum DESC')
             ->limit(3)
             ->asArray()
             ->all();
+    }
+
+    /**
+     * @return bool
+     */
+    public function isProcessing() {
+
+        return OrdersUsers::find()->andWhere(['orders_id' => $this->id, 'status' => OrdersUsers::STATUS_START])->count() > 0;
+    }
+
+    /**
+     * @return OrdersUsers[]|array
+     */
+    public function whoIsProcessing() {
+        return OrdersUsers::find()->andWhere(['orders_id' => $this->id, 'status' => OrdersUsers::STATUS_START])->all();
     }
 
 }

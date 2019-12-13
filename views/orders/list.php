@@ -41,18 +41,22 @@ $columns = [
         'attribute'=>'is_today',
         'label'=>'Статус',
         'content'=>function($data) {
-
+            $adminContent = '';
+            /** @var \app\models\Orders $data */
             if ($data->status == \app\models\Orders::STATUS_ACTIVE) {
                 $content = 'В процессе..';
-                $adminContent = '&nbsp;&nbsp;'.Html::a(
-                        '<span class="glyphicon glyphicon-saved"></span>',
-                        \yii\helpers\Url::to(['orders/close', 'id' => $data->id]),
-                        ['title' => 'Завершить заказ']
-                    );
+                if (!$data->isProcessing()) {
+                    $adminContent = '&nbsp;&nbsp;'.Html::a(
+                            '<span class="glyphicon glyphicon-saved"></span>',
+                            \yii\helpers\Url::to(['orders/done', 'id' => $data->id]),
+                            ['title' => 'Завершить заказ']
+                        );
+                }
+
             }
             else {
                 $content = 'Завершён';
-                $adminContent = '&nbsp;&nbsp;'.Html::a(
+                $adminContent = '&nbsp;&nbsp;' . Html::a(
                         '<span class="glyphicon glyphicon-eye-open"></span>',
                         \yii\helpers\Url::to(['orders/open', 'id' => $data->id]),
                         ['title' => 'Открыть заказ']

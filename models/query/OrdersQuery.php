@@ -37,7 +37,7 @@ class OrdersQuery extends ActiveQuery
      * @return $this
      */
     public function active() {
-        $this->andWhere(['or', ['status' => Orders::STATUS_ACTIVE], ['status' => Orders::STATUS_CLOSE]]);
+        $this->andWhere(['or', ['status' => Orders::STATUS_ACTIVE], ['status' => Orders::STATUS_DONE]]);
         return $this;
     }
 }
