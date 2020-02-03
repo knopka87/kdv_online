@@ -1,7 +1,11 @@
 <?php
-/* @var $this yii\web\View */
+/*
+ * @var $this yii\web\View
+ * @var $order app\models\Orders
+ */
 
 use app\models\OrderPositions;
+use app\models\Orders;
 use app\models\Tools;
 use yii\grid\GridView;
 use yii\helpers\Html;
@@ -12,6 +16,11 @@ $this->registerCssFile('@web/css/style-75.css');
 
 
 <?php
+
+if ($order->status === Orders::STATUS_BLOCK) {
+    echo '<p class="text-danger">Заказ заблокирован!</p>';
+}
+
 /*
 $positions = $positions->all();
 foreach ($positions as $position) {
@@ -106,6 +115,7 @@ echo GridView::widget([
     'summary' => false,
 ]);
 ?>
+<?if ($order->status == Orders::STATUS_PAYED) :?>
 <h2>Доска почёта по заказу</h2>
 <div class="row ui-75">
     <div class="col-md-4 col-sm-6 col-xs-6 col-mob">
@@ -157,3 +167,4 @@ echo GridView::widget([
         </div>
     </div>
 </div>
+<?endif;?>

@@ -173,6 +173,9 @@ class UserBalance extends \yii\db\ActiveRecord
                 OrderPositions::andWhereStatistics($topType).
                 ($orderId>0 ? ' AND order_id = '.$orderId : '')
             )
+            ->innerJoinWith(['user' => function($query) {
+                $query->andWhere(['users.active' => Users::STATUS_ACTIVE]);
+            }])
             ->$topType()
             ->groupBy('user_id')
             ->orderBy('sum DESC')

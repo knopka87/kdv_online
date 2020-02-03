@@ -2,6 +2,8 @@
 
 namespace app\models\query;
 
+use app\models\Tokens;
+
 /**
  * This is the ActiveQuery class for [[\app\models\Tokens]].
  *
@@ -30,5 +32,13 @@ class TokensQuery extends \yii\db\ActiveQuery
     public function one($db = null)
     {
         return parent::one($db);
+    }
+
+    /**
+     * @return $this
+     */
+    public function active() {
+
+        return $this->andWhere(['status' => Tokens::STATUS_ACTIVE]);
     }
 }

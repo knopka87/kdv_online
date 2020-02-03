@@ -61,7 +61,7 @@ class BalanceController extends \yii\web\Controller
         }
 
         return $this->render('deposite', [
-            'users' => $this->getAllUsers(),
+            'users' => $this->getAllActiveUsers(),
             'orders' => $this->getAllOrders(),
             'balanceList' => $this->getAllBalance(),
             'model'=> new UserBalanceLog()
@@ -88,22 +88,6 @@ class BalanceController extends \yii\web\Controller
             );
         }
 
-    /*
-        curl_setopt_array($ch = curl_init(), array(
-            CURLOPT_URL => "https://pushall.ru/api.php",
-            CURLOPT_POSTFIELDS => array(
-                "type" => "self",
-                "id" => "92293",
-                "key" => "1711ba86d1e03399bf22a132d26ffdfb",
-                "text" => "Тестовое сообщение",
-                "title" => "Заголовок"
-            ),
-            CURLOPT_SAFE_UPLOAD => true,
-            CURLOPT_RETURNTRANSFER => true
-        ));
-        $return=curl_exec($ch); //получить данные о рассылке
-        curl_close($ch);
-*/
         return $this->render('donate', [
             'model'=> new UserBalanceLog()
         ]);
@@ -124,7 +108,7 @@ class BalanceController extends \yii\web\Controller
         }
     }
 
-    protected function getAllUsers() {
+    protected function getAllActiveUsers() {
 
         $userList = Users::find()->active()->addSelect(['id', 'username'])->all();
         return ArrayHelper::map($userList,'id','username');
@@ -142,7 +126,17 @@ class BalanceController extends \yii\web\Controller
     }
 
     protected function getAllBalance() {
-        return ArrayHelper::map(UserBalance::find()->addSelect(['user_id', 'balance'])->orderBy('balance ASC')->all(), 'user_id', 'balance');
+        return ArrayHelper::map(
+            UserBalance::find()
+                ->addSelect(['user_id', 'balance'])
+                ->innerJoinWith(['user' => function($query) {
+                    $query->andWhere(['users.active' => Users::STATUS_ACTIVE]);
+                }])
+                ->orderBy('balance ASC')
+                ->all(),
+            'user_id',
+            'balance'
+        );
     }
 
 }

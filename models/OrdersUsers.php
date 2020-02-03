@@ -36,7 +36,7 @@ class OrdersUsers extends \yii\db\ActiveRecord
         return [
             [['orders_id', 'users_id'], 'required'],
             [['orders_id', 'users_id', 'status'], 'integer'],
-            [['orders_id'], 'unique', 'targetAttribute' => ['orders_id', 'orders_id' => 'users_id']],
+            //[['orders_id'], 'unique', 'targetAttribute' => ['orders_id', 'orders_id' => 'users_id']], // ошибка в уникальности 2х сразу полей
             [['orders_id'], 'exist', 'skipOnError' => true, 'targetClass' => Orders::className(), 'targetAttribute' => ['orders_id' => 'id']],
             [['users_id'], 'exist', 'skipOnError' => true, 'targetClass' => Users::className(), 'targetAttribute' => ['users_id' => 'id']],
         ];

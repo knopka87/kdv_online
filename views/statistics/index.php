@@ -196,13 +196,13 @@ $this->registerCssFile('@web/css/style-75.css');
                 <?php foreach ($topAmountPositions as $position):?>
                     <li>
                         <div class="row">
-                            <div class="col-md-9">
+                            <div class="col-md-10">
                                 <?=Html::a(
                                     $position['caption'],
                                     $position['kdv_url']
                                 )?>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <?=$position['count']?> шт.
                             </div>
                         </div>
@@ -213,3 +213,4 @@ $this->registerCssFile('@web/css/style-75.css');
     </div>
 
 </div>
+<?php

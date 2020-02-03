@@ -34,10 +34,20 @@ $form = ActiveForm::begin(['id' => 'form-deposite']); ?>
     </div>
 <?php ActiveForm::end(); ?>
 
-<h3><?=Yii::t('app', 'Должники')?>:</h3>
+<h3><?=Yii::t('app', 'Баланс пользователей')?>:</h3>
 <?php
 foreach ($balanceList as $userId => $balance) {
-    echo '<div>' .$users[$userId]. ': ' .$balance. '</div>';
+    echo '<div>';
+    if ($balance < 0) {
+        echo
+            '<a style="cursor: pointer" onclick="setDeposite(\'' . ($userId) . '\', \'' . (-$balance) . '\')">' .
+            $users[$userId] . ': ' . $balance .
+            '</a>';
+    }
+    else {
+        echo $users[$userId] . ': ' . $balance ;
+    }
+    echo '</div>';
 }
 
 $this->registerJs('jQuery("#userbalancelog-order_id").on("change", function() {
@@ -46,4 +56,12 @@ $this->registerJs('jQuery("#userbalancelog-order_id").on("change", function() {
     } else {
         jQuery("#userbalancelog-comment").val("' . $commentText . '" + this.value);
     }
-});');
+});
+');
+?>
+<script>
+    function setDeposite(userId, sum) {
+        jQuery("#userbalancelog-sum").val(sum);
+        jQuery("#userbalancelog-user_id option[value="+userId+"]").attr("selected", "selected");
+    }
+</script>

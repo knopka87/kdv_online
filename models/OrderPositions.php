@@ -29,13 +29,12 @@ class OrderPositions extends \yii\db\ActiveRecord
     private static $noStat = [
             'all' => [
                 [
-                    'user_id' => 1,
-                    'order_id' => 6
+                    'user_id' => 24,
                 ]
             ],
             'donate' => [
                 [
-                    'id' => [187,130,126, 244]
+                    'user_balance_log.id' => [187,130,126,244,278]
                 ]
             ]
         ];
@@ -223,9 +222,9 @@ class OrderPositions extends \yii\db\ActiveRecord
                 OrderPositions::andWhereStatistics() .
                 ($orderId > 0 ? ' AND order_id = ' . $orderId : '')
             )
-            ->joinWith([
+            ->innerJoinWith([
                 'order' => function ($query) {
-                    $query->andWhere(['status' => Orders::STATUS_DONE]);
+                    return $query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
                 }
             ])
             ->groupBy('user_id')
@@ -244,9 +243,9 @@ class OrderPositions extends \yii\db\ActiveRecord
                 OrderPositions::andWhereStatistics() .
                 ($orderId > 0 ? ' AND order_id = ' . $orderId : '')
             )
-            ->with([
+            ->innerJoinWith([
                 'order' => function ($query) {
-                    $query->andWhere(['status' => Orders::STATUS_DONE]);
+                    $query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
                 }
             ])
             ->groupBy('user_id')
@@ -270,9 +269,9 @@ class OrderPositions extends \yii\db\ActiveRecord
             $whereOr = [];
             foreach ($whereList as $field => $value) {
                 if (is_array($value)) {
-                    $whereOr[] = "`{$field}` NOT IN ('" . implode("', '", $value) . "')";
+                    $whereOr[] = "{$field} NOT IN ('" . implode("', '", $value) . "')";
                 } else {
-                    $whereOr[] = "`{$field}` <> '{$value}'";
+                    $whereOr[] = "{$field} <> '{$value}'";
                 }
             }
             $where .= ' AND (' . implode(' OR ', $whereOr) . ')';
@@ -287,12 +286,12 @@ class OrderPositions extends \yii\db\ActiveRecord
             return [];
         }
         return static::find()
-            ->addSelect(['*', 'COUNT(id) as count'])
+            ->addSelect(['*', 'COUNT(order_positions.id) as count'])
             ->andWhere(
                 ['user_id' => $userId]
             )
-            ->with(['order' => function ($query) {
-				$query->andWhere(['status' => Orders::STATUS_DONE]);
+            ->innerJoinWith(['order' => function ($query) {
+				$query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
 				}
 			])
             ->andHaving('`count` > 2')
@@ -306,15 +305,11 @@ class OrderPositions extends \yii\db\ActiveRecord
     public static function getPopularPositions() {
 
         return static::find()
-            ->addSelect(['*', 'COUNT(id) as count'])
+            ->addSelect(['*', 'COUNT(order_positions.id) as count'])
             ->addGroupBy('kdv_url')
-            ->with(['order' => function ($query) {
-				$query->andWhere(['status' => Orders::STATUS_DONE]);
-				}
-			])
             ->orderBy('count DESC')
-            ->limit(3)
             ->asArray()
+            ->limit(3)
             ->all();
     }
 
@@ -323,10 +318,6 @@ class OrderPositions extends \yii\db\ActiveRecord
         return static::find()
             ->addSelect(['*', 'SUM(amount) as count'])
             ->addGroupBy('kdv_url')
-            ->with(['order' => function ($query) {
-				$query->andWhere(['status' => Orders::STATUS_DONE]);
-				}
-			])
             ->orderBy('count DESC')
             ->limit(3)
             ->asArray()

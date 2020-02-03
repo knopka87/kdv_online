@@ -553,8 +553,8 @@ body{
 }
 /* Unordered Listing */
 .ui-75 .ui-item ul{
-	padding-left:0px;
-	margin-bottom:0px;
+	padding-left:0;
+	margin-bottom:0;
 	list-style-type:none;
 	border:1px solid #e7e7e7;
 }
@@ -576,9 +576,11 @@ body{
 		font-size:12px;
 	}
 }
+/*
 .ui-75 .ui-item ul > li:nth-child(3){
-	border-bottom:0px;
+	border-bottom:0;
 }
+*/
 /* Icon */
 .ui-75 .ui-item ul > li > a > i{
 	display:inline-block;
@@ -597,11 +599,11 @@ body{
 /* Number */
 .ui-75 .ui-item ul > li > span{
 	float:right;
-	margin-right:60px;
+	margin-right:40px;
 }
 @media(max-width: 274px){
 	.ui-75 .ui-item ul > li > span{
-		margin-right: 50px;
+		margin-right: 30px;
 	}
 }
 /* Bar Chart */
@@ -609,6 +611,6 @@ body{
 	position:absolute;
 	right: 10px;
 	bottom: 8px;
-	margin-right:0px;
-	margin-top:0px;
+	margin-right:0;
+	margin-top:0;
 }

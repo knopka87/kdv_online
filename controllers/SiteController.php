@@ -155,9 +155,11 @@ class SiteController extends Controller
                 if ($findToken) {
                     // по идее не должны сюда попадать..
                     $findToken->user_id = $token->user_id;
+                    $findToken->status = Tokens::STATUS_ACTIVE;
                     $findToken->update();
                 }
                 else {
+                    $token->status = Tokens::STATUS_ACTIVE;
                     $token->insert();
                 }
 
@@ -176,10 +178,11 @@ class SiteController extends Controller
         
         $request = Yii::$app->request;
         if ($post = $request->post()) {
-            $notification->title = $post['Notification']['title'];
-            $notification->body = $post['Notification']['body'];
-            $notification->clickAction = $post['Notification']['click_action'];
-            $res = $notification->send();
+            $notificationPost = new Notification();
+            $notificationPost->title = $post['Notification']['title'];
+            $notificationPost->body = $post['Notification']['body'];
+            $notificationPost->clickAction = $post['Notification']['click_action'];
+            $res = $notificationPost->send();
 
             if ($res) {
                 Yii::$app->session->setFlash('success', 'Сообщение успешно отправлено');

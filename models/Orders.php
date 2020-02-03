@@ -20,10 +20,11 @@ use yii\db\Expression;
  */
 class Orders extends \yii\db\ActiveRecord
 {
-    const STATUS_NOT_ACTIVE = 1;
-    const STATUS_ACTIVE = 2;
-    const STATUS_DONE = 3;
-    const STATUS_BASKET = 4;
+    const STATUS_NOT_ACTIVE = 1; // не активен
+    const STATUS_ACTIVE = 2; // открыт для заказа
+    const STATUS_BLOCK = 3; // заказ заблокирован
+    const STATUS_BASKET = 4; // корзина
+    const STATUS_PAYED = 5; // закрыт и оплачен
 
     /**
      * {@inheritdoc}
@@ -117,8 +118,8 @@ class Orders extends \yii\db\ActiveRecord
         return OrderPositions::find()
             ->addSelect(['*', 'SUM(weight*amount) as weight'])
             ->addGroupBy('order_id')
-            ->with(['order' => function ($query) {
-				$query->andWhere(['status' => Orders::STATUS_DONE]);
+            ->innerJoinWith(['order' => function ($query) {
+				$query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
 				}
 			])
             ->orderBy('weight DESC')
@@ -135,8 +136,8 @@ class Orders extends \yii\db\ActiveRecord
         return OrderPositions::find()
             ->addSelect(['*', 'SUM(amount*price) as sum'])
             ->addGroupBy('order_id')
-            ->with(['order' => function ($query) {
-				$query->andWhere(['status' => Orders::STATUS_DONE]);
+            ->innerJoinWith(['order' => function ($query) {
+				return $query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
 				}
 			])
             ->orderBy('sum DESC')
@@ -153,8 +154,8 @@ class Orders extends \yii\db\ActiveRecord
         return OrderPositions::find()
             ->addSelect(['*', 'SUM(amount) as sum'])
             ->addGroupBy('order_id')
-            ->with(['order' => function ($query) {
-				$query->andWhere(['status' => Orders::STATUS_DONE]);
+            ->innerJoinWith(['order' => function ($query) {
+				$query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
 				}
 			])
             ->orderBy('sum DESC')
@@ -170,8 +171,8 @@ class Orders extends \yii\db\ActiveRecord
 
         return OrderPositions::find()
             ->addSelect(['order_id', 'COUNT(DISTINCT user_id) as sum'])
-            ->with(['order' => function ($query) {
-				$query->andWhere(['status' => Orders::STATUS_DONE]);
+            ->innerJoinWith(['order' => function ($query) {
+				$query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
 				}
 			])
             ->addGroupBy('order_id')
@@ -196,4 +197,10 @@ class Orders extends \yii\db\ActiveRecord
         return OrdersUsers::find()->andWhere(['orders_id' => $this->id, 'status' => OrdersUsers::STATUS_START])->all();
     }
 
+    /**
+     * @return array
+     */
+    public static function statusDone() {
+        return [self::STATUS_BLOCK, self::STATUS_PAYED];
+    }
 }

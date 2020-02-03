@@ -3,6 +3,7 @@
  * @var $dataProvider \yii\data\ActiveDataProvider
  */
 
+use app\models\Orders;
 use app\models\Users;
 use yii\grid\GridView;
 use yii\helpers\Html;
@@ -42,25 +43,33 @@ $columns = [
         'label'=>'Статус',
         'content'=>function($data) {
             $adminContent = '';
-            /** @var \app\models\Orders $data */
-            if ($data->status == \app\models\Orders::STATUS_ACTIVE) {
+            /** @var Orders $data */
+            if ($data->status == Orders::STATUS_ACTIVE) {
                 $content = 'В процессе..';
                 if (!$data->isProcessing()) {
                     $adminContent = '&nbsp;&nbsp;'.Html::a(
-                            '<span class="glyphicon glyphicon-saved"></span>',
-                            \yii\helpers\Url::to(['orders/done', 'id' => $data->id]),
-                            ['title' => 'Завершить заказ']
+                            '<span class="glyphicon glyphicon-ok"></span>',
+                            \yii\helpers\Url::to(['orders/block', 'id' => $data->id]),
+                            ['title' => 'Заблокировать заказ']
                         );
                 }
 
             }
-            else {
+            elseif (in_array($data->status, Orders::statusDone(), true)) {
                 $content = 'Завершён';
                 $adminContent = '&nbsp;&nbsp;' . Html::a(
                         '<span class="glyphicon glyphicon-eye-open"></span>',
                         \yii\helpers\Url::to(['orders/open', 'id' => $data->id]),
                         ['title' => 'Открыть заказ']
                     );
+
+                if ($data->status !== Orders::STATUS_PAYED) {
+                    $adminContent .= '&nbsp;&nbsp;' . Html::a(
+                            '<span class="glyphicon glyphicon-ruble"></span>',
+                            \yii\helpers\Url::to(['orders/pay-order', 'id' => $data->id]),
+                            ['title' => 'Снять средства с балансов']
+                        );
+                }
             }
 
             if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {

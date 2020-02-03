@@ -17,9 +17,10 @@ use yii\data\ArrayDataProvider;
 class OrdersController extends \yii\web\Controller
 {
 
-    public function beforeAction($action) {
+    public function beforeAction($action)
+    {
 
-        if (Yii::$app->user->isGuest) {
+        if (Yii::$app->user->isGuest || (int)Yii::$app->user->id <= 0) {
             Yii::$app->response->redirect(['site/login']);
         }
         return true;
@@ -126,7 +127,7 @@ class OrdersController extends \yii\web\Controller
                 ->andWhere(['order_id' => $id,'user_id' => Yii::$app->user->id]);
 
         }
-        elseif ($order->status == Orders::STATUS_DONE) {
+        elseif (in_array($order->status, Orders::statusDone())) {
             $view = 'view';
             $ordersUsersStatus = 'close';
             $positionsQuery = OrderPositions::find()
@@ -162,7 +163,7 @@ class OrdersController extends \yii\web\Controller
             'ordersUsersStatus' => $ordersUsersStatus
         ];
 
-        if ($order->status == Orders::STATUS_DONE) {
+        if (in_array($order->status, Orders::statusDone())) {
             $params['writeOffList'] = UserBalance::topBalanceList('writeOff', $id);
             $params['countPositionsList'] = OrderPositions::topCountPositionsList($id);
             $params['weightList'] = OrderPositions::topWeightList($id);
@@ -182,12 +183,12 @@ class OrdersController extends \yii\web\Controller
         }
 
         $order = Orders::findIdentity($id);
-        
+
         $userList = Users::find()->select(['username', 'id'])->asArray()->all();
         foreach ($userList as $user) {
             $users[$user['id']] = $user['username'];
         }
-        
+
         $positionModel = new OrderPositions();
 
         $positionsQuery = OrderPositions::find()
@@ -233,38 +234,70 @@ class OrdersController extends \yii\web\Controller
         return $this->render('list', ['dataProvider' => $dataProvider]);
     }
 
-    public function actionDone($id) {
+    public function actionBlock($id) {
+
+        if (!Yii::$app->user->identity->isAdmin()) {
+            Yii::$app->response->redirect(['order/list']);
+        }
 
         $order = Orders::findIdentity($id);
-        $order->status = Orders::STATUS_DONE;
-        $order->update();
+        if ($order) {
+            $order->status = Orders::STATUS_BLOCK;
+            $order->update();
 
-        $sumListByUser = [];
-        $positions = $order->getOrderPositions()->all();
-        foreach ($positions as $position) {
-            $sumListByUser[$position->user_id] += $position->amount * $position->price;
+            $userList = [];
+            $positions = $order->getOrderPositions()->all();
+            if ($positions) {
+                foreach ($positions as $position) {
+                    $userList[] = $position->user_id;
+                }
+
+                // отправка уведомлений только тем кто участвует в заказе
+                $notification = new Notification();
+                $notification->title = 'Заказ №'.$id.' заблокирован';
+                $notification->body = 'Изменения в заказе больше не принимаются!';
+                $notification->clickAction = 'https://' . $_SERVER['HTTP_HOST'] .
+                    \yii\helpers\Url::to(['balance/index']);
+                $notification->send($userList);
+            }
+        }
+        Yii::$app->response->redirect(['orders/list']);
+    }
+    public function actionPayOrder($id) {
+
+        if (!Yii::$app->user->identity->isAdmin()) {
+            Yii::$app->response->redirect(['order/list']);
         }
 
-        foreach ($sumListByUser as $userId => $sum) {
-                // списание средств со счёта
-            UserBalance::changeBalance(
-                $sum,
-                $userId,
-                $id,
-                UserBalance::TYPE_WRITE_OFF
-            );
-        }
+        $order = Orders::findIdentity($id);
+        if ($order) {
 
-        // отправка уведомлений только тем кто участвует в заказе
-        $notification = new Notification();
-        $notification->title = 'Заказ закрыт';
-        $notification->body = 'Баланс был изменён. Нажмите на сообщение для просмотра '.
-            'статистики по балансу с дальнейшим переходом на оплату.';
-        $notification->clickAction = 'https://' . $_SERVER['HTTP_HOST'].
+            $userList = [];
+            $positions = $order->getOrderPositions()->all();
+            foreach ($positions as $position) {
+
+                $userList[] = $position->user_id;
+
+                UserBalance::changeBalance(
+                    $position->amount * $position->price,
+                    $position->user_id,
+                    $id,
+                    UserBalance::TYPE_WRITE_OFF
+                );
+            }
+
+            $order->status = Orders::STATUS_PAYED;
+            $order->update();
+
+            // отправка уведомлений только тем кто участвует в заказе
+            $notification = new Notification();
+            $notification->title = 'Изменение баланса';
+            $notification->body = 'Произошло снятие средств за заказ №'.$id.'. Нажмите на сообщение для просмотра ' .
+                'статистики по балансу с дальнейшим переходом на оплату.';
+            $notification->clickAction = 'https://' . $_SERVER['HTTP_HOST'] .
                 \yii\helpers\Url::to(['balance/index']);
-        $notification->send(
-            array_keys($sumListByUser)
-        );
+            $notification->send($userList);
+        }
 
         Yii::$app->response->redirect(['orders/list']);
     }
@@ -272,23 +305,27 @@ class OrdersController extends \yii\web\Controller
     public function actionOpen($id) {
 
         $order = Orders::findIdentity($id);
-        if ($order->status == Orders::STATUS_DONE) {
+        if ($order && in_array($order->status, Orders::statusDone())) {
+
+            if ($order->status === Orders::STATUS_PAYED) {
+
+                // отменяем ранее сделанное списание средств за заказ
+
+                $balanceLogs = UserBalanceLog::find()
+                    ->andWhere(['order_id' => $id, 'type' => UserBalance::TYPE_WRITE_OFF])
+                    ->all();
+
+                foreach ($balanceLogs as $balanceLog) {
+                    $balance = UserBalance::find()->andWhere(['user_id' => $balanceLog->user_id])->one();
+                    $balance->balance -= round($balanceLog->sum, 2);
+                    $balance->save();
+
+                    $balanceLog->delete();
+                }
+            }
 
             $order->status = Orders::STATUS_ACTIVE;
             $order->update();
-
-            $balanceLogs = UserBalanceLog::find()
-                ->andWhere(['order_id' => $id])
-                ->andFilterCompare('sum', '<0')
-                ->all();
-
-            foreach ($balanceLogs as $balanceLog) {
-                $balance = UserBalance::find()->andWhere(['user_id' => $balanceLog->user_id])->one();
-                $balance->balance -= round($balanceLog->sum, 2);
-                $balance->save();
-
-                $balanceLog->delete();
-            }
         }
         Yii::$app->response->redirect(['orders/list']);
     }

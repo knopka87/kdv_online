@@ -1,5 +1,6 @@
 <?php
 
+use app\models\Tokens;
 use yii\db\Migration;
 
 /**
@@ -16,7 +17,7 @@ class m191212_100249_create_tokens_table extends Migration
             'id' => $this->primaryKey(),
             'user_id' => $this->integer()->notNull(),
             'token' => $this->string()->notNull()->unique(),
-
+            'status' => $this->integer()->notNull()->defaultValue(Tokens::STATUS_ACTIVE)
         ]);
 
         $this->createIndex(
