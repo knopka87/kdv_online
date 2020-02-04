@@ -64,22 +64,6 @@ if ($ordersUsersStatus == 'done') {
                     },
                     'footer' => "<b>" . OrderPositions::getTotalPrice($positionProvider->models) . "</b>",
                 ],
-                [
-                    'class' => 'yii\grid\ActionColumn',
-                    'template' => '{delete}',
-                    'buttons' => [
-                        'delete' => function ($url, $model, $key) {
-                            return Html::a(
-                                '<span class="glyphicon glyphicon-trash"></span>',
-                                \yii\helpers\Url::to(['positions/delete', 'id' => $key, 'orderId' => $model->order_id]),
-                                [
-                                    'data-pjax' => '#model-grid',
-                                    'title' => Yii::t('app', 'Delete')
-                                ]
-                            );
-                        },
-                    ]
-                ],
             ],
             'showFooter' => true,
             'summary' => false,

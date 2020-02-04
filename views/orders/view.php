@@ -104,6 +104,25 @@ $columns = [
     ]
 ];
 
+if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {
+    $columns[] = [
+        'class' => 'yii\grid\ActionColumn',
+        'template' => '{delete}',
+        'buttons' => [
+            'delete' => function ($url,$model, $key) {
+                return Html::a(
+                    '<span class="glyphicon glyphicon-trash"></span>',
+                    \yii\helpers\Url::to(['positions/delete', 'id' => $model->id, 'orderId' => $model->order_id]),
+                    [
+                        'data-pjax' => '#model-grid',
+                        'title' => Yii::t('app', 'Delete')
+                    ]
+                );
+            },
+        ],
+    ];
+}
+
 echo GridView::widget([
     'dataProvider' => $positionProvider,
     'columns' => $columns,

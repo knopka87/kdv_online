@@ -152,9 +152,9 @@ class OrderPositions extends \yii\db\ActiveRecord
     /**
      * @param int $id id позиции заказа
      *
-     * @return ActiveRecord
+     * @return OrderPositions
      */
-    public static function findIdentity($id): ActiveRecord
+    public static function findIdentity($id)
     {
         return static::find()
             ->andWhere(['id' => $id])
@@ -168,6 +168,13 @@ class OrderPositions extends \yii\db\ActiveRecord
         }
 
         if (strpos($this->kdv_url, 'kdvonline') === false) {
+            return;
+        }
+
+        $order = Orders::findIdentity($this->order_id);
+
+        if (!$order || in_array($order->status, Orders::statusDone())) {
+            \Yii::$app->session->setFlash('danger', 'Заказ заблокирован для изменений!');
             return;
         }
 
