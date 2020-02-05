@@ -312,10 +312,10 @@ class OrderPositions extends \yii\db\ActiveRecord
             ->andWhere(
                 ['user_id' => $userId]
             )
-            ->innerJoinWith(['order' => function ($query) {
+            /*->innerJoinWith(['order' => function ($query) {
 				$query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
 				}
-			])
+			])*/
             ->andHaving('`count` > 2')
             ->groupBy('kdv_url')
             ->limit(10)

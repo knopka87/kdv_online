@@ -24,7 +24,7 @@ class PositionsController extends \yii\web\Controller
                 'order_id' => $orderId,
             ];
             if (!$isAdmin) {
-                $filterList[] = ['user_id' => Yii::$app->user->id];
+                $filterList['user_id'] = Yii::$app->user->id;
             }
 
             $position = OrderPositions::findIdentity($id);

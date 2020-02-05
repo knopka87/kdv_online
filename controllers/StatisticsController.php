@@ -35,6 +35,10 @@ class StatisticsController extends \yii\web\Controller
 
     public function actionPersonal() {
 
+        if (\Yii::$app->user->isGuest || (int)\Yii::$app->user->id <= 0) {
+            \Yii::$app->response->redirect(['site/login']);
+        }
+
         $orderListQuuery = OrderPositions::find()
             ->addSelect(
                 [
