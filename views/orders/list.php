@@ -12,7 +12,15 @@ use yii\helpers\Html;
 $this->title = 'Список заказов';
 //$this->params['breadcrumbs'][] = $this->title;
 ?>
-    <h1><?= Html::encode($this->title) ?></h1>
+<div class="row">
+    <div class="col-md-6">
+        <h1><?= Html::encode($this->title) ?></h1>
+    </div>
+    <div class="col-md-6" style="margin-top: 20px;margin-bottom: 10px;">
+        <a href="<?=\yii\helpers\Url::to(['statistics/personal'])?>" class="btn btn-primary" style="float: right">Персональная статистика</a>
+    </div>
+</div>
+
 
 <?php
 

@@ -19,6 +19,11 @@ use yii\db\ActiveRecord;
  * @property int $amount
  * @property double $price
  * @property string $caption
+ * @property int $weight
+ * @property float $protein
+ * @property float $fat
+ * @property float $carbon
+ * @property int $kcal
  * @property int $created_at
  * @property int $updated_at
  *
@@ -121,6 +126,7 @@ class OrderPositions extends \yii\db\ActiveRecord
         // подключаем phpQuery
         $document = phpQuery::newDocumentHTML($body);
 
+        // закоментировано из-за того, что пока не умею задавать город, в котором отображается наличие
         /*if (strpos($document->html(), 'Нет в наличии') !== false) {
             \Yii::$app->session->setFlash('error', 'Товара нет в наличии!');
             return false;
@@ -128,17 +134,26 @@ class OrderPositions extends \yii\db\ActiveRecord
 
         preg_match('#class=.product-cart__price-value[^>]+>(.*)</span>#', $document->html(), $match);
         $price = (float)str_replace(",", ".",$match[1]);
+        $this->price = $price;
 
         $caption = $document->find('.product-description')->children('div')->children('h1')->html();
+        $this->caption = $caption;
+
         preg_match('/[^\d]*([0-9,]*).(г|кг).*/ui', $caption, $output);
         $weight = str_replace(',', '.', $output[1]);
         if ($output[2] === 'кг') {
-			$weight *= 1000;
+            $weight *= 1000;
         }
-
-        $this->price = $price;
-        $this->caption = $caption;
         $this->weight = $weight;
+
+        $productDescriptionTraits = $document->find('.product-description__traits__2g3bY')->html();
+        preg_match_all('/>([0-9\.]+).г/u', $productDescriptionTraits, $output);
+        $this->protein = $output[1][0];
+        $this->fat = $output[1][1];
+        $this->carbon = $output[1][2];
+
+        preg_match('/>([0-9\.]+).ккал/u', $productDescriptionTraits, $output);
+        $this->kcal = $output[1];
 
         return true;
     }
@@ -316,7 +331,7 @@ class OrderPositions extends \yii\db\ActiveRecord
             ->addGroupBy('kdv_url')
             ->orderBy('count DESC')
             ->asArray()
-            ->limit(3)
+            ->limit(10)
             ->all();
     }
 
@@ -326,7 +341,7 @@ class OrderPositions extends \yii\db\ActiveRecord
             ->addSelect(['*', 'SUM(amount) as count'])
             ->addGroupBy('kdv_url')
             ->orderBy('count DESC')
-            ->limit(3)
+            ->limit(10)
             ->asArray()
             ->all();
     }

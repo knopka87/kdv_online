@@ -31,12 +31,14 @@ class PositionsController extends \yii\web\Controller
 
             OrderPositions::deleteAll($filterList);
 
-            $notification = new Notification();
-            $notification->title = 'Удалена позиция из заказа №'.$orderId;
-            $notification->body = '"'.$position->caption.'" - нет в наличии на КДВ';
-            $notification->clickAction = 'https://' . $_SERVER['HTTP_HOST'] .
-                \yii\helpers\Url::to(['orders/view', 'id' => $orderId]);
-            $notification->send([Yii::$app->user->id]);
+            if ($isAdmin && $position->user_id !== Yii::$app->user->id) {
+                $notification = new Notification();
+                $notification->title = 'Удалена позиция из заказа №' . $orderId;
+                $notification->body = '"' . $position->caption . '" - нет в наличии на КДВ';
+                $notification->clickAction = 'https://' . $_SERVER['HTTP_HOST'] .
+                    \yii\helpers\Url::to(['orders/view', 'id' => $orderId]);
+                $notification->send([$position->user_id]);
+            }
         }
         elseif (in_array($order->status, Orders::statusDone(), true)) {
             \Yii::$app->session->setFlash('danger', 'Удаление невозможно! Заказ заблокирован для изменений!');
