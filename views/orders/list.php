@@ -64,7 +64,17 @@ $columns = [
 
             }
             elseif (in_array($data->status, Orders::statusDone(), true)) {
-                $content = 'Завершён';
+
+                switch ($data->status) {
+                    case Orders::STATUS_BLOCK:
+                        $content = 'Заблокирован';
+                        break;
+                    default:
+                    case Orders::STATUS_PAYED:
+                        $content = 'Завершён';
+                        break;
+                }
+
                 $adminContent = '&nbsp;&nbsp;' . Html::a(
                         '<span class="glyphicon glyphicon-eye-open"></span>',
                         \yii\helpers\Url::to(['orders/open', 'id' => $data->id]),

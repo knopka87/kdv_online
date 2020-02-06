@@ -127,8 +127,6 @@ else {
 
 <?php endif;?>
 <?php
-Pjax::end();
-
 $script = '
 $("#PositionsUpdateForm").on("beforeSubmit", function () {
   $(this).find("button").prop("disabled", true);
@@ -136,3 +134,4 @@ $("#PositionsUpdateForm").on("beforeSubmit", function () {
   return true;  
 })';
 $this->registerJs($script);
+Pjax::end();

@@ -7,6 +7,7 @@
 use app\models\OrderPositions;
 use app\models\Orders;
 use app\models\Tools;
+use app\widgets\Alert;
 use yii\grid\GridView;
 use yii\helpers\Html;
 
@@ -123,6 +124,28 @@ if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {
     ];
 }
 
+if(
+    $order->status == Orders::STATUS_BLOCK &&
+    !Yii::$app->user->isGuest &&
+     Yii::$app->user->identity->isAdmin()
+) {
+    $form = \yii\bootstrap\ActiveForm::begin([
+        'layout' => 'inline',
+        'id' => 'PositionsUpdateForm',
+    ]);
+?>
+    <?= Alert::widget() ?>
+
+    <?= $form->field($positionModel, 'kdv_url')->textInput(['placeholder' => "Kdv url"])->label(false);?>&nbsp;
+    <?= $form->field($positionModel, 'amount')->textInput(['placeholder' => "Общее кол-во", 'value' => '1', 'type' => 'number'])->label(false)?>&nbsp;
+    <?= $form->field($positionModel, 'user_id')->dropDownList($users)->label(Yii::t('app', 'Пользователь'))?>&nbsp;
+    <button type="submit" class="btn btn-default">Добавить/изменить товар</button>
+<?php
+    \yii\bootstrap\ActiveForm::end();
+    echo '<br><br>';
+}
+
+
 echo GridView::widget([
     'dataProvider' => $positionProvider,
     'columns' => $columns,
@@ -133,6 +156,7 @@ echo GridView::widget([
     'showFooter' => true,
     'summary' => false,
 ]);
+
 ?>
 <?if ($order->status == Orders::STATUS_PAYED) :?>
 <h2>Доска почёта по заказу</h2>

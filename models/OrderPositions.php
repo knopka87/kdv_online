@@ -189,8 +189,10 @@ class OrderPositions extends \yii\db\ActiveRecord
         $order = Orders::findIdentity($this->order_id);
 
         if (!$order || in_array($order->status, Orders::statusDone())) {
-            \Yii::$app->session->setFlash('danger', 'Заказ заблокирован для изменений!');
-            return;
+            if (!\Yii::$app->user->identity->isAdmin()) {
+                \Yii::$app->session->setFlash('danger', 'Заказ заблокирован для изменений!');
+                return;
+            }
         }
 
         $findPosition = static::find()->andWhere(
