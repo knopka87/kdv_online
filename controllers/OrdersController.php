@@ -273,13 +273,20 @@ class OrdersController extends \yii\web\Controller
         if ($order) {
 
             $userList = [];
-            $positions = $order->getOrderPositions()->all();
+            $positions = $order
+                ->getOrderPositions()
+                ->addSelect([
+                    'user_id',
+                    'SUM(amount*price) as price',
+                ])
+                ->groupBy('user_id')
+                ->all();
             foreach ($positions as $position) {
 
                 $userList[] = $position->user_id;
 
                 UserBalance::changeBalance(
-                    $position->amount * $position->price,
+                    $position->price,
                     $position->user_id,
                     $id,
                     UserBalance::TYPE_WRITE_OFF
