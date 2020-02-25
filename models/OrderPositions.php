@@ -2,9 +2,9 @@
 
 namespace app\models;
 
-use Codeception\Lib\Parser;
-use GuzzleHttp\Client;
-use phpQuery;
+use app\models\kdv\KdvBasket;
+use app\models\kdv\KdvProduct;
+use Yii;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 
@@ -13,11 +13,15 @@ use yii\db\ActiveRecord;
  * This is the model class for table "order_positions".
  *
  * @property int $id
+ * @property int $kdv_id
  * @property int $order_id
  * @property int $user_id
  * @property string $kdv_url
- * @property int $amount
+ * @property float $amount
+ * @property float $multiple
  * @property double $price
+ * @property double $kdv_price
+ * @property string $unit
  * @property string $caption
  * @property int $weight
  * @property float $protein
@@ -31,18 +35,6 @@ use yii\db\ActiveRecord;
  */
 class OrderPositions extends \yii\db\ActiveRecord
 {
-    private static $noStat = [
-            'all' => [
-                [
-                    'user_id' => 24,
-                ]
-            ],
-            'donate' => [
-                [
-                    'user_balance_log.id' => [187,130,126,244,278]
-                ]
-            ]
-        ];
     /**
      * {@inheritdoc}
      */
@@ -58,8 +50,8 @@ class OrderPositions extends \yii\db\ActiveRecord
     {
         return [
             [['order_id', 'user_id', 'kdv_url', 'amount'], 'required'],
-            [['order_id', 'user_id', 'weight', 'amount', 'created_at', 'updated_at'], 'integer'],
-            [['price'], 'number'],
+            [['order_id', 'user_id', 'weight', 'created_at', 'updated_at'], 'integer'],
+            [['price', 'amount', 'multiple'], 'number'],
             [['order_id', 'user_id', 'kdv_url'], 'unique', 'targetAttribute' => ['order_id', 'user_id', 'kdv_url']],
             [['kdv_url', 'caption'], 'string', 'max' => 255],
             [['order_id'], 'exist', 'skipOnError' => true, 'targetClass' => Orders::className(), 'targetAttribute' => ['order_id' => 'id']],
@@ -114,46 +106,59 @@ class OrderPositions extends \yii\db\ActiveRecord
     }
 
 
-    public function getKdvPageInfo() {
-        // парсинг сайта кдв и заполнение полей caption, price
+    public function getProductInfo() {
 
-        // создаем экземпляр класса
-        $client = new Client();
-        // отправляем запрос к странице Яндекса
-        $res = $client->request('GET', $this->kdv_url);
-        // получаем данные между открывающим и закрывающим тегами body
-        $body = $res->getBody();
-        // подключаем phpQuery
-        $document = phpQuery::newDocumentHTML($body);
+        preg_match('#-([0-9]+)$#', $this->kdv_url, $match);
+        $this->kdv_id = (int)$match[1];
 
-        // закоментировано из-за того, что пока не умею задавать город, в котором отображается наличие
-        /*if (strpos($document->html(), 'Нет в наличии') !== false) {
-            \Yii::$app->session->setFlash('error', 'Товара нет в наличии!');
+        $product = new KdvProduct();
+        $productInfo = $product->getProductInfo($this->kdv_id);
+
+        if (!$productInfo->isAvailable) {
+            Yii::$app->session->setFlash('error', 'Товара нет в наличии!');
             return false;
-        }*/
-
-        preg_match('#class=.product-cart__price-value[^>]+>(.*)</span>#', $document->html(), $match);
-        $price = (float)str_replace(",", ".",$match[1]);
-        $this->price = $price;
-
-        $caption = $document->find('.product-description')->children('div')->children('h1')->html();
-        $this->caption = $caption;
-
-        preg_match('/[^\d]*([0-9,]*).(г|кг).*/ui', $caption, $output);
-        $weight = str_replace(',', '.', $output[1]);
-        if ($output[2] === 'кг') {
-            $weight *= 1000;
         }
-        $this->weight = $weight;
 
-        $productDescriptionTraits = $document->find('.product-description__traits__2g3bY')->html();
-        preg_match_all('/>([0-9\.]+).г/u', $productDescriptionTraits, $output);
-        $this->protein = $output[1][0];
-        $this->fat = $output[1][1];
-        $this->carbon = $output[1][2];
+        $this->multiple = $productInfo->quant->multiple;
+        $this->unit = $productInfo->quant->unit;
+        $this->kdv_price = $productInfo->quant->pricePerUnit;
+        $this->price = ceil($this->kdv_price * 105)/100;
 
-        preg_match('/>([0-9\.]+).ккал/u', $productDescriptionTraits, $output);
-        $this->kcal = $output[1];
+        $this->caption = $productInfo->name;
+
+        foreach ($productInfo->properties as $property) {
+            switch ($property->name) {
+                case 'weight_unit':
+                    if ($property->unit === 'г') {
+                        $this->weight = $property->value;
+                    }
+                    elseif ($property->unit === 'кг') {
+                        $this->weight = $property->value*1000;
+                    }
+                    break;
+                case 'protein_content':
+                    $this->protein = $property->value;
+                    break;
+                case 'fat_content':
+                    $this->fat = $property->value;
+                    break;
+                case 'carbohydrate_content':
+                    $this->carbon = $property->value;
+                    break;
+                case 'energy_value':
+                    $this->kcal = $property->value;
+                    break;
+            }
+        }
+
+        if (!$this->weight) {
+            preg_match('/[^\d]*([0-9,]*).(г|кг).*/ui', $this->caption, $output);
+            $weight = str_replace(',', '.', $output[1]);
+            if ($output[2] === 'кг') {
+                $weight *= 1000;
+            }
+            $this->weight = $weight;
+        }
 
         return true;
     }
@@ -167,7 +172,7 @@ class OrderPositions extends \yii\db\ActiveRecord
     /**
      * @param int $id id позиции заказа
      *
-     * @return OrderPositions
+     * @return ActiveRecord
      */
     public static function findIdentity($id)
     {
@@ -188,13 +193,28 @@ class OrderPositions extends \yii\db\ActiveRecord
 
         $order = Orders::findIdentity($this->order_id);
 
+        $ordersUsers = OrdersUsers::find()->andWhere(['order_id' => $this->order_id, 'user_id' => $this->user_id])->one();
+        if (!$ordersUsers) {
+            $ordersUsers = new OrdersUsers();
+            $ordersUsers->user_id = $this->user_id;
+            $ordersUsers->order_id = $this->order_id;
+            $ordersUsers->status = OrdersUsers::STATUS_START;
+            $ordersUsers->insert();
+        }
+        elseif ($ordersUsers->status != OrdersUsers::STATUS_START) {
+
+            $ordersUsers->status = OrdersUsers::STATUS_START;
+            $ordersUsers->update();
+        }
+
         if (!$order || in_array($order->status, Orders::statusDone())) {
-            if (!\Yii::$app->user->identity->isAdmin()) {
-                \Yii::$app->session->setFlash('danger', 'Заказ заблокирован для изменений!');
+            if (!Yii::$app->user->identity->isAdmin()) {
+                Yii::$app->session->setFlash('danger', 'Заказ заблокирован для изменений!');
                 return;
             }
         }
 
+        /** @var OrderPositions $findPosition */
         $findPosition = static::find()->andWhere(
             [
                 'order_id' => $this->order_id,
@@ -203,27 +223,63 @@ class OrderPositions extends \yii\db\ActiveRecord
             ]
         )->one();
 
+
+        $kdvBasket = new KdvBasket();
         if ($findPosition) {
             $findPosition->amount = $this->amount;
-            //$findPosition->getKdvPageInfo(); // по идее цена не должна обновиться
+            $findPosition->getProductInfo();
             $findPosition->update();
-            \Yii::$app->session->setFlash('info', 'Кол-во у товара изменено');
+
+            $kdvBasket->updateBasket($findPosition->kdv_id, $findPosition->order_id);
+
+            Yii::$app->session->setFlash('info', 'Кол-во у товара изменено.');
         }
-        elseif ($this->getKdvPageInfo()) {
+        elseif ($this->getProductInfo()) {
+
             $this->insert();
-            \Yii::$app->session->setFlash('success', 'Товар успешно добавлен в корзину');
+
+            $kdvBasket->updateBasket($this->kdv_id, $this->order_id);
+
+            Yii::$app->session->setFlash('success', 'Товар успешно добавлен в заказ.');
         }
+    }
+
+    public function deletePosition($delKdvBasket=true) {
+
+        $isAdmin = Yii::$app->user->identity->isAdmin();
+        if ($delKdvBasket) {
+            $kdvBasket = new KdvBasket();
+            $kdvBasket->delBasket($this->kdv_id);
+        }
+
+        Yii::$app->session->setFlash('info', 'Позиция <b>'.$this->caption.'</b> успешно удалена.');
+
+        if ($isAdmin && $this->user_id !== Yii::$app->user->id) {
+            $notification = new Notification();
+            $notification->title = 'Удалена позиция из заказа №' . $this->order_id;
+            $notification->body = '"' . $this->caption . '" - нет в наличии на КДВ';
+            $notification->clickAction = 'https://' . $_SERVER['HTTP_HOST'] .
+                \yii\helpers\Url::to(['orders/view', 'id' => $this->order_id]);
+            $notification->send([$this->user_id]);
+        }
+        $this->delete();
     }
 
     public static function getTotalPrice($dataProvider) {
 
         $totalBalance = 0;
+        $isAdmin = !Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin();
 
         foreach ($dataProvider as $item){
-            $totalBalance += $item['amount']*$item['price'];
+            if ($isAdmin) {
+                $totalBalance += $item['amount'] * $item['kdv_price'];
+            }
+            else {
+                $totalBalance += $item['amount'] * $item['price'];
+            }
         }
 
-        return $totalBalance;
+        return round($totalBalance, 2);
     }
 
     public static function getTotalWeight($dataProvider) {
@@ -237,114 +293,15 @@ class OrderPositions extends \yii\db\ActiveRecord
         return $totalBalance;
     }
 
-    public static function topCountPositionsList($orderId = 0)
-    {
+    public static function deletePositionForAllUser($orderId, $kdvId) {
 
-        return OrderPositions::find()
-            ->select(['SUM(amount) as count_pos', 'user_id', 'order_id'])
-            ->andWhere(
-                OrderPositions::andWhereStatistics() .
-                ($orderId > 0 ? ' AND order_id = ' . $orderId : '')
-            )
-            ->innerJoinWith([
-                'order' => function ($query) {
-                    return $query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
-                }
-            ])
-            ->groupBy('user_id')
-            ->orderBy('count_pos DESC')
-            ->limit(3)
-            ->asArray()
+        $positionList = OrderPositions::find()
+            ->andWhere(['order_id' => $orderId, 'kdv_id' => $kdvId])
             ->all();
-    }
-
-    public static function topWeightList($orderId = 0)
-    {
-
-        return OrderPositions::find()
-            ->select(['SUM(amount*weight) as count_pos', 'user_id', 'order_id'])
-            ->andWhere(
-                OrderPositions::andWhereStatistics() .
-                ($orderId > 0 ? ' AND order_id = ' . $orderId : '')
-            )
-            ->innerJoinWith([
-                'order' => function ($query) {
-                    $query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
-                }
-            ])
-            ->groupBy('user_id')
-            ->orderBy('count_pos DESC')
-            ->limit(3)
-            ->asArray()
-            ->all();
-    }
-
-    public static function andWhereStatistics($type = 'all')
-    {
-        switch ($type) {
-            case 'donate' :
-                break;
-            default:
-                $type = 'all';
-                break;
+        /** @var OrderPositions $position */
+        foreach ($positionList as $position) {
+            $position->deletePosition(false);
         }
-        $where = '';
-        foreach (self::$noStat[$type] as $whereList) {
-            $whereOr = [];
-            foreach ($whereList as $field => $value) {
-                if (is_array($value)) {
-                    $whereOr[] = "{$field} NOT IN ('" . implode("', '", $value) . "')";
-                } else {
-                    $whereOr[] = "{$field} <> '{$value}'";
-                }
-            }
-            $where .= ' AND (' . implode(' OR ', $whereOr) . ')';
-        }
-        return substr($where, 4);
-    }
-
-    public static function getTopUsedPosition($userId) {
-
-        $userId = (int)$userId;
-        if ($userId <= 0) {
-            return [];
-        }
-        return static::find()
-            ->addSelect(['*', 'COUNT(order_positions.id) as count'])
-            ->andWhere(
-                ['user_id' => $userId]
-            )
-            /*->innerJoinWith(['order' => function ($query) {
-				$query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
-				}
-			])*/
-            ->andHaving('`count` > 2')
-            ->groupBy('kdv_url')
-            ->limit(10)
-            ->orderBy('count DESC')
-            ->asArray()
-            ->all();
-    }
-
-    public static function getPopularPositions() {
-
-        return static::find()
-            ->addSelect(['*', 'COUNT(order_positions.id) as count'])
-            ->addGroupBy('kdv_url')
-            ->orderBy('count DESC')
-            ->asArray()
-            ->limit(10)
-            ->all();
-    }
-
-    public static function getTopAmountPositions() {
-
-        return static::find()
-            ->addSelect(['*', 'SUM(amount) as count'])
-            ->addGroupBy('kdv_url')
-            ->orderBy('count DESC')
-            ->limit(10)
-            ->asArray()
-            ->all();
+        (new KdvBasket())->delBasket($kdvId);
     }
 }

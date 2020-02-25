@@ -32,7 +32,7 @@ foreach ($positions as $position) {
 $columns = [
     [
         'attribute'=>'kdv_url',
-        'label'=>'Ссылка на KDV',
+        'label'=>'Товар',
         'content'=>function($data) {
             $content = Html::a(
                 $data->caption?:$data->kdv_url,
@@ -73,9 +73,9 @@ $columns = [
         'attribute'=>'price',
         'label'=>'Цена',
         'content'=>function($data) {
-            $content = $data->price;
+            $content = Tools::priceFormat($data->price);
             if ($data->user->id === Yii::$app->user->id) {
-                $content = '<b>' . $content . '</b>';
+                $content = '<b>' . $content. '</b>';
             }
             return $content;
         },
@@ -84,13 +84,13 @@ $columns = [
         'attribute' => 'total',
         'label' => 'Сумма',
         'content' => function ($data) {
-            $content = $data->amount * $data->price;
+            $content = Tools::priceFormat($data->amount * $data->price);
             if ($data->user->id === Yii::$app->user->id) {
                 $content = '<b>' . $content . '</b>';
             }
             return $content;
         },
-        'footer' => "<b>" . OrderPositions::getTotalPrice($positionProvider->models) . "</b>",
+        'footer' => "<b>" . Tools::priceFormat(OrderPositions::getTotalPrice($positionProvider->models)) . "</b>",
     ],
     [
         'attribute' => 'username',
@@ -106,6 +106,29 @@ $columns = [
 ];
 
 if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {
+    $columns[] = [
+        'attribute'=>'price',
+        'label'=>'Цена КДВ',
+        'content'=>function($data) {
+            $content = Tools::priceFormat($data->kdv_price);
+            if ($data->user->id === Yii::$app->user->id) {
+                $content = '<b>' . $content . '</b>';
+            }
+            return $content;
+        },
+    ];
+    $columns[] = [
+        'attribute' => 'total',
+        'label' => 'Сумма КДВ',
+        'content' => function ($data) {
+            $content = Tools::priceFormat($data->amount * $data->kdv_price);
+            if ($data->user->id === Yii::$app->user->id) {
+                $content = '<b>' . $content . '</b>';
+            }
+            return $content;
+        },
+        'footer' => "<b>" . Tools::priceFormat(OrderPositions::getTotalPrice($positionProvider->models)) . "</b>",
+    ];
     $columns[] = [
         'class' => 'yii\grid\ActionColumn',
         'template' => '{delete}',

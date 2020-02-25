@@ -2,9 +2,13 @@
 
 namespace app\controllers;
 
+use app\models\kdv\Kdv;
+use app\models\kdv\KdvBasket;
+use app\models\kdv\KdvProduct;
 use app\models\Notification;
 use app\models\SignupForm;
 use app\models\Tokens;
+use app\models\Tools;
 use app\models\Users;
 use Yii;
 use yii\filters\AccessControl;
@@ -175,7 +179,7 @@ class SiteController extends Controller
 
         $notification = new Notification();
         $res = null;
-        
+
         $request = Yii::$app->request;
         if ($post = $request->post()) {
             $notificationPost = new Notification();
@@ -196,6 +200,15 @@ class SiteController extends Controller
         return $this->render('notification', ['notificationModel' => $notification, 'res' => $res]);
     }
 
+    public function actionTest() {
+
+        /*$kdvProduct = new KdvBasket();
+        $kdvProduct->addBasket(1378, 2);
+        return $kdvProduct->sincBasket(12);*/
+        $kdvProduct = new KdvProduct();
+        return Tools::dd($kdvProduct->getProductInfo(277));
+
+    }
     /*
     public function actionAddAdmin(){
         $model = Users::find()->where(['username' => 'a.yanover'])->one();

@@ -2,11 +2,12 @@
 
 namespace app\controllers;
 
+use app\models\kdv\KdvBasket;
 use app\models\Notification;
 use app\models\OrderPositions;
 use app\models\Orders;
 use app\models\OrdersUsers;
-use app\models\Tools;
+use app\models\Statistic;
 use app\models\UserBalance;
 use app\models\UserBalanceLog;
 use app\models\Users;
@@ -21,18 +22,21 @@ class OrdersController extends \yii\web\Controller
     {
 
         if (Yii::$app->user->isGuest || (int)Yii::$app->user->id <= 0) {
-            Yii::$app->response->redirect(['site/login']);
+            Yii::$app->user->loginRequired();
         }
         return true;
     }
     public function actionAdd()
     {
-        $todayOrder = Orders::findTodayOrder();
+        $todayOrder = Orders::findActiveOrder();
         if (!$todayOrder) {
             $order = new Orders();
             $order->status = Orders::STATUS_ACTIVE;
             if ($order->save()) {
                 $todayOrder = $order;
+
+                $kdvBasket = new KdvBasket();
+                $kdvBasket->clearBasket();
 
                 $notification = new Notification();
                 $notification->title = 'Новый заказ!';
@@ -60,40 +64,46 @@ class OrdersController extends \yii\web\Controller
         $ordersUsers = new OrdersUsers();
 
         if (Yii::$app->request->isPost) {
-            $postKeys = array_keys(Yii::$app->request->post());
-            $typeUpdate = next($postKeys);
+            $post = Yii::$app->request->post();
+            $postKeys = array_keys($post);
 
-            switch ($typeUpdate) {
-                case 'OrderPositions':
-                    $orderPosition = new OrderPositions();
-                    $orderPosition->order_id = $id;
-                    $orderPosition->user_id = Yii::$app->user->id;
-                    if ($orderPosition->load(Yii::$app->request->post())) {
-                        $orderPosition->addPosition();
-                    }
-                    break;
-                case 'OrdersUsers':
-                    $findOrdersUsers = OrdersUsers::find()->andWhere([
-                        'orders_id' => $id,
-                        'users_id' => Yii::$app->user->id
-                    ])->one();
-                    if (!$findOrdersUsers) {
-                        $ordersUsers->orders_id = $id;
-                        $ordersUsers->users_id = Yii::$app->user->id;
-                    }
-                    else {
-                        $ordersUsers = $findOrdersUsers;
-                    }
-                    if ($ordersUsers->load(Yii::$app->request->post())) {
-
+            foreach ($postKeys as $typeUpdate) {
+                switch ($typeUpdate) {
+                    case 'OrderPositions':
+                        $orderPosition = new OrderPositions();
+                        $orderPosition->order_id = $id;
+                        $orderPosition->user_id = Yii::$app->user->id;
+                        if ($orderPosition->load($post)) {
+                            $orderPosition->addPosition();
+                        }
+                        if ($post['ajax']) {
+                            return
+                                Yii::$app->session->getFlash('danger', null, true)?:
+                                    Yii::$app->session->getFlash('info', null, true)?:
+                                        Yii::$app->session->getFlash('success', null, true);
+                        }
+                        break;
+                    case 'OrdersUsers':
+                        $findOrdersUsers = OrdersUsers::find()->andWhere([
+                            'order_id' => $id,
+                            'user_id' => Yii::$app->user->id
+                        ])->one();
                         if (!$findOrdersUsers) {
-                            $ordersUsers->insert();
+                            $ordersUsers->order_id = $id;
+                            $ordersUsers->user_id = Yii::$app->user->id;
+                        } else {
+                            $ordersUsers = $findOrdersUsers;
                         }
-                        else {
-                            $ordersUsers->update();
+                        if ($ordersUsers->load(Yii::$app->request->post())) {
+
+                            if (!$findOrdersUsers) {
+                                $ordersUsers->insert();
+                            } else {
+                                $ordersUsers->update();
+                            }
                         }
-                    }
-                    break;
+                        break;
+                }
             }
         }
 
@@ -108,7 +118,7 @@ class OrdersController extends \yii\web\Controller
 
         if ($order->status == Orders::STATUS_ACTIVE) {
 
-            $myOrdersUsers = OrdersUsers::find()->andWhere(['orders_id' => $id, 'users_id' => Yii::$app->user->id])->addSelect(['status'])->one();
+            $myOrdersUsers = OrdersUsers::find()->andWhere(['order_id' => $id, 'user_id' => Yii::$app->user->id])->addSelect(['status'])->one();
 
             if (!$myOrdersUsers) {
                 $view = 'freeze';
@@ -164,63 +174,41 @@ class OrdersController extends \yii\web\Controller
         ];
 
         if (in_array($order->status, Orders::statusDone())) {
-            $params['writeOffList'] = UserBalance::topBalanceList('writeOff', $id);
-            $params['countPositionsList'] = OrderPositions::topCountPositionsList($id);
-            $params['weightList'] = OrderPositions::topWeightList($id);
+            $params['writeOffList'] = Statistic::topBalanceList('writeOff', $id);
+            $params['countPositionsList'] = Statistic::topCountPositionsList($id);
+            $params['weightList'] = Statistic::topWeightList($id);
         }
         elseif ($order->status == Orders::STATUS_ACTIVE) {
-            $params['topUsedPosition'] = OrderPositions::getTopUsedPosition(Yii::$app->user->id);
+            $params['topUsedPosition'] = Statistic::getTopUsedPosition(Yii::$app->user->id);
             $params['whoIsProcessing'] = $order->whoIsProcessing();
+            $params['countUsers'] = OrdersUsers::find()->andWhere(['order_id' => $id])->count();
+        }
+
+        if (in_array($order->status, [Orders::STATUS_ACTIVE, Orders::STATUS_BLOCK])) {
+            $totalPositionsQuery = OrderPositions::find()
+                ->andWhere(['order_id' => $id])
+                ->groupBy('kdv_url')
+                ->addSelect('order_id, kdv_url, price, kdv_price, caption, user_id, multiple')
+                ->addSelect('SUM([[amount]]) AS amount')
+                ->joinWith('user')
+                ->addSelect('GROUP_CONCAT(DISTINCT users.username SEPARATOR \', \') AS `username`')
+                ->orderBy(['multiple' => SORT_DESC])
+                ->asArray();
+            ;
+
+            $totalPositionProvider = new ArrayDataProvider(
+                [
+                    'allModels' => $totalPositionsQuery->all(),
+                    'pagination' => [
+                        'pageSize' => 100
+                    ],
+                    'sort' => false,
+                ]
+            );
+            $params['totalPositionProvider'] = $totalPositionProvider;
         }
 
         return $this->render($view, $params);
-    }
-
-    public function actionAdminList($id) {
-
-        if (!Yii::$app->user->identity->isAdmin()) {
-            Yii::$app->response->redirect(['order/list']);
-        }
-
-        $order = Orders::findIdentity($id);
-
-        $userList = Users::find()->select(['username', 'id'])->asArray()->all();
-        foreach ($userList as $user) {
-            $users[$user['id']] = $user['username'];
-        }
-
-        $positionModel = new OrderPositions();
-
-        $positionsQuery = OrderPositions::find()
-            ->andWhere(['order_id' => $id])
-            ->groupBy('kdv_url')
-            ->addSelect('order_id, kdv_url, price, caption, user_id')
-            ->addSelect('SUM([[amount]]) AS amount')
-            ->joinWith('user')
-            ->addSelect('GROUP_CONCAT(DISTINCT users.username SEPARATOR \', \') AS `username`')
-            ->orderBy(['amount' => SORT_DESC])
-            ->asArray();
-        ;
-
-        $dataProvider = new ArrayDataProvider(
-            [
-                'allModels' => $positionsQuery->all(),
-                'pagination' => [
-                    'pageSize' => 100
-                ],
-                'sort' => false,
-            ]
-        );
-
-        return $this->render(
-            'admin_list',
-            [
-				'order' => $order,
-				'users' => $users,
-				'positionProvider' => $dataProvider,
-				'positionModel' => $positionModel
-			]
-        );
     }
 
     public function actionList()
@@ -244,6 +232,10 @@ class OrdersController extends \yii\web\Controller
         if ($order) {
             $order->status = Orders::STATUS_BLOCK;
             $order->update();
+
+            $kdvBasket = new KdvBasket();
+            $message = $kdvBasket->sincBasket($id);
+            Yii::$app->session->setFlash('info', $message);
 
             $userList = [];
             $positions = $order->getOrderPositions()->all();

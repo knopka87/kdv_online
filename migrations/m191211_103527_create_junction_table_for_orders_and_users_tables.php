@@ -17,41 +17,41 @@ class m191211_103527_create_junction_table_for_orders_and_users_tables extends M
     public function safeUp()
     {
         $this->createTable('{{%orders_users}}', [
-            'orders_id' => $this->integer(),
-            'users_id' => $this->integer(),
+            'order_id' => $this->integer(),
+            'user_id' => $this->integer(),
             'status' => $this->integer()->defaultValue(0),
-            'PRIMARY KEY(orders_id, users_id)',
+            'PRIMARY KEY(order_id, user_id)',
         ]);
 
-        // creates index for column `orders_id`
+        // creates index for column `order_id`
         $this->createIndex(
-            '{{%idx-orders_users-orders_id}}',
+            '{{%idx-orders_users-order_id}}',
             '{{%orders_users}}',
-            'orders_id'
+            'order_id'
         );
 
         // add foreign key for table `{{%orders}}`
         $this->addForeignKey(
-            '{{%fk-orders_users-orders_id}}',
+            '{{%fk-orders_users-order_id}}',
             '{{%orders_users}}',
-            'orders_id',
+            'order_id',
             '{{%orders}}',
             'id',
             'CASCADE'
         );
 
-        // creates index for column `users_id`
+        // creates index for column `user_id`
         $this->createIndex(
-            '{{%idx-orders_users-users_id}}',
+            '{{%idx-orders_users-user_id}}',
             '{{%orders_users}}',
-            'users_id'
+            'user_id'
         );
 
         // add foreign key for table `{{%users}}`
         $this->addForeignKey(
-            '{{%fk-orders_users-users_id}}',
+            '{{%fk-orders_users-user_id}}',
             '{{%orders_users}}',
-            'users_id',
+            'user_id',
             '{{%users}}',
             'id',
             'CASCADE'
@@ -65,25 +65,25 @@ class m191211_103527_create_junction_table_for_orders_and_users_tables extends M
     {
         // drops foreign key for table `{{%orders}}`
         $this->dropForeignKey(
-            '{{%fk-orders_users-orders_id}}',
+            '{{%fk-orders_users-order_id}}',
             '{{%orders_users}}'
         );
 
-        // drops index for column `orders_id`
+        // drops index for column `order_id`
         $this->dropIndex(
-            '{{%idx-orders_users-orders_id}}',
+            '{{%idx-orders_users-order_id}}',
             '{{%orders_users}}'
         );
 
         // drops foreign key for table `{{%users}}`
         $this->dropForeignKey(
-            '{{%fk-orders_users-users_id}}',
+            '{{%fk-orders_users-user_id}}',
             '{{%orders_users}}'
         );
 
-        // drops index for column `users_id`
+        // drops index for column `user_id`
         $this->dropIndex(
-            '{{%idx-orders_users-users_id}}',
+            '{{%idx-orders_users-user_id}}',
             '{{%orders_users}}'
         );
 

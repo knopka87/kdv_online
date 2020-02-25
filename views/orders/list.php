@@ -4,7 +4,7 @@
  */
 
 use app\models\Orders;
-use app\models\Users;
+use app\widgets\Alert;
 use yii\grid\GridView;
 use yii\helpers\Html;
 
@@ -21,7 +21,7 @@ $this->title = 'Список заказов';
     </div>
 </div>
 
-
+<?= Alert::widget() ?>
 <?php
 
 $columns = [
@@ -34,14 +34,6 @@ $columns = [
                     'Заказ №'.$data->id.' от ' . \Yii::$app->formatter->asDate($data->created_at, 'php:d.m.Y'),
                     \yii\helpers\Url::to(['orders/view', 'id' => $data->id])
             );
-
-            if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {
-                $content .= '&nbsp;&nbsp;'.Html::a(
-                    '<span class="glyphicon glyphicon-list"></span>',
-                    \yii\helpers\Url::to(['orders/admin-list', 'id' => $data->id]),
-                    ['title' => 'Показать итоговый заказ']
-                );
-            }
 
             return $content;
         }

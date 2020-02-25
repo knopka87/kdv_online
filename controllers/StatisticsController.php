@@ -4,6 +4,7 @@ namespace app\controllers;
 
 use app\models\OrderPositions;
 use app\models\Orders;
+use app\models\Statistic;
 use app\models\UserBalance;
 use app\models\Users;
 use yii\data\ActiveDataProvider;
@@ -20,16 +21,16 @@ class StatisticsController extends \yii\web\Controller
         return $this->render('index',
             [
                 'users' => $users,
-                'writeOffList' => UserBalance::topBalanceList('writeOff'),
-                'countPositionsListByUser' => OrderPositions::topCountPositionsList(),
-                'donateList' => UserBalance::topBalanceList('donate'),
-                'weightListByUser' => OrderPositions::topWeightList(),
-                'weightListByOrder' => Orders::getTopWeightOrder(),
-                'countPositionsListByOrder' => Orders::getTopCountPositions(),
-                'totalPriceListByOrder' => Orders::getTopTotalPriceOrder(),
-                'countUsersListByOrder' => Orders::getTopCountUsers(),
-                'popularPositions' => OrderPositions::getPopularPositions(),
-                'topAmountPositions' => OrderPositions::getTopAmountPositions()
+                'writeOffList' => Statistic::topBalanceList('writeOff'),
+                'countPositionsListByUser' => Statistic::topCountPositionsList(),
+                'donateList' => Statistic::topBalanceList('donate'),
+                'weightListByUser' => Statistic::topWeightList(),
+                'weightListByOrder' => Statistic::getTopWeightOrder(),
+                'countPositionsListByOrder' => Statistic::getTopCountPositions(),
+                'totalPriceListByOrder' => Statistic::getTopTotalPriceOrder(),
+                'countUsersListByOrder' => Statistic::getTopCountUsers(),
+                'popularPositions' => Statistic::getPopularPositions(),
+                'topAmountPositions' => Statistic::getTopAmountPositions()
             ]);
     }
 

@@ -146,7 +146,7 @@ class UserBalance extends \yii\db\ActiveRecord
     }
 
     public static function getTinkoffLink() {
-        $link = 'https://www.tinkoff.ru/collectmoney/crowd/yanover.aleksandr1/VBUVf93834/';
+        $link = Yii::$app->params['tinkoff_link'];
 
         $balance = UserBalance::find()->andWhere(['user_id' => \Yii::$app->user->id])->one()->balance;
         if ($balance < 0) {
@@ -155,32 +155,5 @@ class UserBalance extends \yii\db\ActiveRecord
         return $link;
     }
 
-    /**
-     * 3 лучших донатчика/транжиры
-     *
-     * @param string $topType
-     * @return array
-     */
-    public static function topBalanceList($topType, $orderId = 0) {
 
-        if (!in_array($topType, ['writeOff', 'donate'])) {
-            return [];
-        }
-
-        return UserBalanceLog::find()
-            ->select(['user_id','ABS(SUM(`sum`)) as sum'])
-            ->andWhere(
-                OrderPositions::andWhereStatistics($topType).
-                ($orderId>0 ? ' AND order_id = '.$orderId : '')
-            )
-            ->innerJoinWith(['user' => function($query) {
-                $query->andWhere(['users.active' => Users::STATUS_ACTIVE]);
-            }])
-            ->$topType()
-            ->groupBy('user_id')
-            ->orderBy('sum DESC')
-            ->limit(3)
-            ->asArray()
-            ->all();
-    }
 }

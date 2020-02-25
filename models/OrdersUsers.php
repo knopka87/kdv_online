@@ -8,8 +8,8 @@ use Yii;
 /**
  * This is the model class for table "orders_users".
  *
- * @property int $orders_id
- * @property int $users_id
+ * @property int $order_id
+ * @property int $user_id
  * @property int $status
  *
  * @property Orders $orders
@@ -34,11 +34,11 @@ class OrdersUsers extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['orders_id', 'users_id'], 'required'],
-            [['orders_id', 'users_id', 'status'], 'integer'],
-            //[['orders_id'], 'unique', 'targetAttribute' => ['orders_id', 'orders_id' => 'users_id']], // ошибка в уникальности 2х сразу полей
-            [['orders_id'], 'exist', 'skipOnError' => true, 'targetClass' => Orders::className(), 'targetAttribute' => ['orders_id' => 'id']],
-            [['users_id'], 'exist', 'skipOnError' => true, 'targetClass' => Users::className(), 'targetAttribute' => ['users_id' => 'id']],
+            [['order_id', 'user_id'], 'required'],
+            [['order_id', 'user_id', 'status'], 'integer'],
+            //[['order_id'], 'unique', 'targetAttribute' => ['order_id', 'order_id' => 'user_id']], // ошибка в уникальности 2х сразу полей
+            [['order_id'], 'exist', 'skipOnError' => true, 'targetClass' => Orders::className(), 'targetAttribute' => ['order_id' => 'id']],
+            [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => Users::className(), 'targetAttribute' => ['user_id' => 'id']],
         ];
     }
 
@@ -48,8 +48,8 @@ class OrdersUsers extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
-            'orders_id' => 'Orders ID',
-            'users_id' => 'Users ID',
+            'order_id' => 'Order ID',
+            'user_id' => 'Users ID',
             'status' => 'Status',
         ];
     }
@@ -59,7 +59,7 @@ class OrdersUsers extends \yii\db\ActiveRecord
      */
     public function getOrder()
     {
-        return $this->hasOne(Orders::className(), ['id' => 'orders_id']);
+        return $this->hasOne(Orders::className(), ['id' => 'order_id']);
     }
 
     /**
@@ -67,7 +67,7 @@ class OrdersUsers extends \yii\db\ActiveRecord
      */
     public function getUser()
     {
-        return $this->hasOne(Users::className(), ['id' => 'users_id']);
+        return $this->hasOne(Users::className(), ['id' => 'user_id']);
     }
 
     /**

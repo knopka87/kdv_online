@@ -2,6 +2,7 @@
 
 namespace app\models;
 
+use app\models\kdv\KdvBasket;
 use app\models\query\OrdersQuery;
 use Yii;
 use yii\behaviors\TimestampBehavior;
@@ -17,6 +18,7 @@ use yii\db\Expression;
  * @property int $updated_at
  *
  * @property OrderPositions[] $orderPositions
+ * @property OrdersUsers[] $ordersUsers
  */
 class Orders extends \yii\db\ActiveRecord
 {
@@ -66,6 +68,14 @@ class Orders extends \yii\db\ActiveRecord
     }
 
     /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getOrdersUsers()
+    {
+        return $this->hasMany(OrdersUsers::className(), ['order_id' => 'id']);
+    }
+
+    /**
      * @return OrdersQuery the active query used by this AR class.
      */
     public static function find()
@@ -74,7 +84,7 @@ class Orders extends \yii\db\ActiveRecord
     }
 
     /**
-     * @param $id
+     * @param int $id
      * @return Orders|null
      */
     public static function findIdentity($id)
@@ -88,14 +98,11 @@ class Orders extends \yii\db\ActiveRecord
     /**
      * @return Orders|null
      */
-    public static function findTodayOrder() {
+    public static function findActiveOrder() {
 
-        $today = strtotime(date('d.m.Y'));
-        $tomorrow  = mktime(0, 0, 0, date('m')  , date('d')+1, date('Y'));
         return static::find()
             ->andWhere(['status' => Orders::STATUS_ACTIVE])
-            ->andFilterCompare('created_at', '>='.$today)
-            ->andFilterCompare('created_at', '<'.$tomorrow)
+            ->orderBy('created_at ASC')
             ->one();
     }
 
@@ -111,90 +118,18 @@ class Orders extends \yii\db\ActiveRecord
     }
 
     /**
-     * @return array
-     */
-    public static function getTopWeightOrder() {
-
-        return OrderPositions::find()
-            ->addSelect(['*', 'SUM(weight*amount) as weight'])
-            ->addGroupBy('order_id')
-            ->innerJoinWith(['order' => function ($query) {
-				$query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
-				}
-			])
-            ->orderBy('weight DESC')
-            ->limit(3)
-            ->asArray()
-            ->all();
-    }
-
-    /**
-     * @return array
-     */
-    public static function getTopTotalPriceOrder() {
-
-        return OrderPositions::find()
-            ->addSelect(['*', 'SUM(amount*price) as sum'])
-            ->addGroupBy('order_id')
-            ->innerJoinWith(['order' => function ($query) {
-				return $query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
-				}
-			])
-            ->orderBy('sum DESC')
-            ->limit(3)
-            ->asArray()
-            ->all();
-    }
-
-    /**
-     * @return array
-     */
-    public static function getTopCountPositions() {
-
-        return OrderPositions::find()
-            ->addSelect(['*', 'SUM(amount) as sum'])
-            ->addGroupBy('order_id')
-            ->innerJoinWith(['order' => function ($query) {
-				$query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
-				}
-			])
-            ->orderBy('sum DESC')
-            ->limit(3)
-            ->asArray()
-            ->all();
-    }
-
-    /**
-     * @return array
-     */
-    public static function getTopCountUsers() {
-
-        return OrderPositions::find()
-            ->addSelect(['order_id', 'COUNT(DISTINCT user_id) as sum'])
-            ->innerJoinWith(['order' => function ($query) {
-				$query->andWhere(['orders.status' => Orders::STATUS_PAYED]);
-				}
-			])
-            ->addGroupBy('order_id')
-            ->orderBy('sum DESC')
-            ->limit(3)
-            ->asArray()
-            ->all();
-    }
-
-    /**
      * @return bool
      */
     public function isProcessing() {
 
-        return OrdersUsers::find()->andWhere(['orders_id' => $this->id, 'status' => OrdersUsers::STATUS_START])->count() > 0;
+        return OrdersUsers::find()->andWhere(['order_id' => $this->id, 'status' => OrdersUsers::STATUS_START])->count() > 0;
     }
 
     /**
      * @return OrdersUsers[]|array
      */
     public function whoIsProcessing() {
-        return OrdersUsers::find()->andWhere(['orders_id' => $this->id, 'status' => OrdersUsers::STATUS_START])->all();
+        return OrdersUsers::find()->andWhere(['order_id' => $this->id, 'status' => OrdersUsers::STATUS_START])->all();
     }
 
     /**

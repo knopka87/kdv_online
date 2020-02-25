@@ -21,4 +21,12 @@ class Tools
         return $total;
     }
 
+    public static function priceFormat($price) {
+        return number_format($price, 2, ',', ' ');
+    }
+
+    public static function dd($text) {
+        return '<pre>'.var_export($text, 1).'</pre>';
+    }
+
 }

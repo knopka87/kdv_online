@@ -1,6 +1,7 @@
 <?php
 
 $params = require __DIR__ . '/params.php';
+$kdvParams = require __DIR__.'/kdv_params.php';
 $db = require __DIR__ . '/db.php';
 
 $config = [
@@ -55,7 +56,7 @@ $config = [
                 ],
             ],
         ],
-        
+
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
@@ -64,7 +65,9 @@ $config = [
                 'site/forget/<accessToken:\S+>' => 'site/forget',
                 'orders/<orderId:\d+>/positions/<action:\w+>/<id:\d+>' => 'positions/<action>',
                 'orders/<action:\S+>/<id:\d+>' => 'orders/<action>',
-                'catalog/<category:\S+>' => 'catalog/items'
+                'catalog/index' => 'catalog/index',
+                'catalog/generate-group-kdv' => 'catalog/generate-group-kdv',
+                'catalog/<categoryUrl:\S+>' => 'catalog/items'
 
 
             ],
@@ -73,7 +76,7 @@ $config = [
             'linkAssets' => true,
         ],
     ],
-    'params' => $params,
+    'params' => array_merge($params, $kdvParams),
 ];
 
 if (YII_ENV_DEV) {

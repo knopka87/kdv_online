@@ -7,7 +7,6 @@ use app\widgets\Alert;
 use yii\helpers\Html;
 use yii\bootstrap\Nav;
 use yii\bootstrap\NavBar;
-use yii\web\View;
 use yii\widgets\Breadcrumbs;
 use app\assets\AppAsset;
 
@@ -46,11 +45,6 @@ AppAsset::register($this);
         'url' => ['balance/donate'],
         'linkOptions' => ['style' => 'background-color: #fcf8e3; color: #777;']
     ];
-    $leftItems[] = [
-        'label' => 'Переход на КДВ',
-        'url' => 'https://kirov.kdvonline.ru',
-        'linkOptions' => ['target' => '_blank', 'style' => 'color: #d80027;']
-    ];
 
 
 
@@ -65,9 +59,11 @@ AppAsset::register($this);
     ];
     if (!Yii::$app->user->isGuest) {
         $items = [
-            ['label' => 'Доска почёта', 'url' => ['/statistics/index']],
+
+            ['label' => 'Каталог', 'url' => ['/catalog/index']],
             ['label' => 'Список заказов', 'url' => ['/orders/list']],
             ['label' => 'Финансы', 'url' => ['/balance/index']],
+            ['label' => 'Доска почёта', 'url' => ['/statistics/index']],
             '<li>'
                 . Html::beginForm(['/site/logout'], 'post')
                 . Html::submitButton(
@@ -101,6 +97,25 @@ AppAsset::register($this);
     $this->registerJsFile('//www.gstatic.com/firebasejs/3.6.8/firebase.js');
     $this->registerJsFile('/firebase_subscribe.js');
 ?>
+<script type="text/javascript">
+    var reformalOptions = {
+        project_id: 983757,
+        project_host: "tradesoft-kdv.reformal.ru",
+        tab_orientation: "bottom-right",
+        tab_indent: "10px",
+        tab_bg_color: "#F05A00",
+        tab_border_color: "#FFFFFF",
+        tab_image_url: "http://tab.reformal.ru/T9GC0LfRi9Cy0Ysg0Lgg0L%252FRgNC10LTQu9C%252B0LbQtdC90LjRjw==/FFFFFF/07330bc5004dd1d3a4e80c777f77d3dc/bottom-right/0/tab.png",
+        tab_border_width: 0
+    };
+
+    (function() {
+        var script = document.createElement('script');
+        script.type = 'text/javascript'; script.async = true;
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'media.reformal.ru/widgets/v3/reformal.js';
+        document.getElementsByTagName('head')[0].appendChild(script);
+    })();
+</script><noscript><a href="http://reformal.ru"><img src="http://media.reformal.ru/reformal.png" /></a><a href="http://tradesoft-kdv.reformal.ru">Oтзывы и предложения для КДВ</a></noscript>
 </body>
 </html>
 <?php $this->endPage();

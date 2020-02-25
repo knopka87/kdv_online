@@ -19,8 +19,7 @@ echo GridView::widget([
     'columns' => [
         [
             'attribute' => 'comment',
-            'label' => 'Описание',
-            'footer' => '<b>Итого:</b>'
+            'label' => 'Описание'
         ],
         [
             'attribute' => 'sum',
@@ -29,7 +28,6 @@ echo GridView::widget([
                 $class = ($data->sum>=0)?'success':'danger';
                 return '<span class="label label-'.$class.'">'.$data->sum.'</span>';
             },
-            'footer' => "<b>" . UserBalanceLog::getTotalSum($balanceProvider->models) . "</b>",
         ],
         [
             'attribute' => 'created_at',
@@ -43,7 +41,6 @@ echo GridView::widget([
         'hideOnSinglePage' => true,
     ],
     'layout'=>"{items}\n{pager}",
-    'showFooter' => true
 ]);
 
 if (Yii::$app->user->identity->isAdmin()) {

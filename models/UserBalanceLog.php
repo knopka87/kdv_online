@@ -71,16 +71,4 @@ class UserBalanceLog extends \yii\db\ActiveRecord
     {
         return new UserBalanceLogQuery(get_called_class());
     }
-
-    public static function getTotalSum($dataProvider) {
-        $totalBalance = 0;
-
-        if ($dataProvider) {
-            foreach ($dataProvider as $item) {
-                $totalBalance += $item['sum'];
-            }
-        }
-
-        return $totalBalance;
-    }
 }
