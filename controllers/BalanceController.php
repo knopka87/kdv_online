@@ -15,8 +15,9 @@ class BalanceController extends \yii\web\Controller
 {
     public function beforeAction($action) {
 
-        if (Yii::$app->user->isGuest) {
-            Yii::$app->response->redirect(['site/login']);
+        if (Yii::$app->user->isGuest || (int)Yii::$app->user->id <= 0) {
+            Yii::$app->user->loginRequired();
+            return false;
         }
         return true;
     }

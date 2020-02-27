@@ -23,6 +23,7 @@ class OrdersController extends \yii\web\Controller
 
         if (Yii::$app->user->isGuest || (int)Yii::$app->user->id <= 0) {
             Yii::$app->user->loginRequired();
+            return false;
         }
         return true;
     }
