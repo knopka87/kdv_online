@@ -124,6 +124,70 @@ class UserBalance extends \yii\db\ActiveRecord
 
     }
 
+    public static function refreshBalance($orderId, $userId = 0) {
+
+        // отменяем ранее сделанное списание средств за заказ
+        $filter = ['order_id' => $orderId, 'type' => UserBalance::TYPE_WRITE_OFF];
+        if ((int)$userId > 0) {
+            $filter['user_id'] = $userId;
+        }
+
+        $balanceLogs = UserBalanceLog::find()
+            ->andWhere($filter)
+            ->all();
+
+        foreach ($balanceLogs as $balanceLog) {
+            $balance = self::find()->andWhere(['user_id' => $balanceLog->user_id])->one();
+            $balance->balance -= round($balanceLog->sum, 2);
+            $balance->save();
+
+            $balanceLog->delete();
+        }
+
+        // заново списываем средства за заказ
+        self::payOrder($orderId, $userId);
+    }
+
+    public static function payOrder($orderId, $userId = 0) {
+
+        $userList = [];
+        $filter = ['order_id' => $orderId];
+        if ((int)$userId > 0) {
+            $filter['user_id'] = $userId;
+        }
+        $positions = OrderPositions::find()
+            ->addSelect([
+                'user_id',
+                'SUM(amount*price) as price',
+            ])
+            ->andWhere($filter)
+            ->groupBy('user_id')
+            ->all();
+        if ($positions) {
+            foreach ($positions as $position) {
+
+                $userList[] = $position->user_id;
+
+                UserBalance::changeBalance(
+                    $position->price,
+                    $position->user_id,
+                    $orderId,
+                    UserBalance::TYPE_WRITE_OFF
+                );
+            }
+            Orders::updateAll(['status' => Orders::STATUS_PAYED], ['id' => $orderId ]);
+
+            // отправка уведомлений только тем кто участвует в заказе
+            $notification = new Notification();
+            $notification->title = 'Изменение баланса';
+            $notification->body = 'Произошло снятие средств за заказ №' . $orderId . '. Нажмите на сообщение для просмотра ' .
+                'статистики по балансу с дальнейшим переходом на оплату.';
+            $notification->clickAction = 'https://' . $_SERVER['HTTP_HOST'] .
+                \yii\helpers\Url::to(['balance/index']);
+            $notification->send($userList);
+        }
+    }
+
     public static function getBalanceHtml() {
         $balance = UserBalance::find()->andWhere(['user_id' => \Yii::$app->user->id])->one()->balance;
         if ($balance >= 0) {

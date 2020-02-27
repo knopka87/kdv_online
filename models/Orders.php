@@ -26,7 +26,7 @@ class Orders extends \yii\db\ActiveRecord
     const STATUS_ACTIVE = 2; // открыт для заказа
     const STATUS_BLOCK = 3; // заказ заблокирован
     const STATUS_BASKET = 4; // корзина
-    const STATUS_PAYED = 5; // закрыт и оплачен
+    const STATUS_PAYED = 5; // закрыт и списаны деньги с баланса
 
     /**
      * {@inheritdoc}

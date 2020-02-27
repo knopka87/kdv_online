@@ -262,7 +262,12 @@ class OrderPositions extends \yii\db\ActiveRecord
                 \yii\helpers\Url::to(['orders/view', 'id' => $this->order_id]);
             $notification->send([$this->user_id]);
         }
+        $position = $this;
         $this->delete();
+
+        if ($position->status == Orders::STATUS_PAYED) {
+            UserBalance::refreshBalance($position->order_id, $position->user_id);
+        }
     }
 
     public static function getTotalPrice($dataProvider) {
