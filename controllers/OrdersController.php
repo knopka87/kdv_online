@@ -192,7 +192,8 @@ class OrdersController extends \yii\web\Controller
                 ->addSelect('order_id, kdv_url, price, kdv_price, caption, user_id, multiple')
                 ->addSelect('SUM([[amount]]) AS amount')
                 ->joinWith('user')
-                ->addSelect('GROUP_CONCAT(DISTINCT users.username SEPARATOR \', \') AS `username`')
+                ->addSelect(['GROUP_CONCAT(DISTINCT users.username,  :p1 , [[amount]],  :p2 SEPARATOR \', \') AS username'])
+                ->addParams([':p1' => ' (', ':p2' => 'шт.)'])
                 ->orderBy(['multiple' => SORT_DESC])
                 ->asArray();
             ;
@@ -262,42 +263,7 @@ class OrdersController extends \yii\web\Controller
             Yii::$app->response->redirect(['order/list']);
         }
 
-        $order = Orders::findIdentity($id);
-        if ($order) {
-
-            $userList = [];
-            $positions = $order
-                ->getOrderPositions()
-                ->addSelect([
-                    'user_id',
-                    'SUM(amount*price) as price',
-                ])
-                ->groupBy('user_id')
-                ->all();
-            foreach ($positions as $position) {
-
-                $userList[] = $position->user_id;
-
-                UserBalance::changeBalance(
-                    $position->price,
-                    $position->user_id,
-                    $id,
-                    UserBalance::TYPE_WRITE_OFF
-                );
-            }
-
-            $order->status = Orders::STATUS_PAYED;
-            $order->update();
-
-            // отправка уведомлений только тем кто участвует в заказе
-            $notification = new Notification();
-            $notification->title = 'Изменение баланса';
-            $notification->body = 'Произошло снятие средств за заказ №'.$id.'. Нажмите на сообщение для просмотра ' .
-                'статистики по балансу с дальнейшим переходом на оплату.';
-            $notification->clickAction = 'https://' . $_SERVER['HTTP_HOST'] .
-                \yii\helpers\Url::to(['balance/index']);
-            $notification->send($userList);
-        }
+        UserBalance::payOrder($id);
 
         Yii::$app->response->redirect(['orders/list']);
     }
