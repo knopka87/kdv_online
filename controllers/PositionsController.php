@@ -12,10 +12,11 @@ class PositionsController extends \yii\web\Controller
     {
         $order = Orders::findIdentity($orderId);
         $isAdmin = Yii::$app->user->identity->isAdmin();
+        $orderStatusDone = $order && in_array($order->status, Orders::statusDone(), true);
         if ($order &&
             (
                 $isAdmin ||
-                !in_array($order->status, Orders::statusDone(), true)
+                !$orderStatusDone
             )
         ) {
             $filterList = [
@@ -32,7 +33,7 @@ class PositionsController extends \yii\web\Controller
                 $position->deletePosition();
             }
         }
-        elseif (in_array($order->status, Orders::statusDone(), true)) {
+        elseif ($orderStatusDone) {
             Yii::$app->session->setFlash('danger', 'Удаление невозможно! Заказ заблокирован для изменений!');
         }
 

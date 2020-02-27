@@ -38,7 +38,7 @@ $columns = [
                 $data->caption?:$data->kdv_url,
                 \yii\helpers\Url::to([$data->kdv_url], '')
             );
-            if ($data->user->id === Yii::$app->user->id) {
+            if ($data->user_id === Yii::$app->user->id) {
                 $content = '<b>' . $content . '</b>';
             }
             return $content;
@@ -50,7 +50,7 @@ $columns = [
         'label'=>'Вес, г.',
         'content'=>function($data) {
             $content = $data->weight;
-            if ($data->user->id === Yii::$app->user->id) {
+            if ($data->user_id === Yii::$app->user->id) {
                 $content = '<b>' . $content . '</b>';
             }
             return $content;
@@ -62,7 +62,7 @@ $columns = [
         'label'=>'Кол-во',
         'content'=>function($data) {
             $content = $data->amount;
-            if ($data->user->id === Yii::$app->user->id) {
+            if ($data->user_id === Yii::$app->user->id) {
                 $content = '<b>' . $content . '</b>';
             }
             return $content;
@@ -74,7 +74,7 @@ $columns = [
         'label'=>'Цена',
         'content'=>function($data) {
             $content = Tools::priceFormat($data->price);
-            if ($data->user->id === Yii::$app->user->id) {
+            if ($data->user_id === Yii::$app->user->id) {
                 $content = '<b>' . $content. '</b>';
             }
             return $content;
@@ -85,7 +85,7 @@ $columns = [
         'label' => 'Сумма',
         'content' => function ($data) {
             $content = Tools::priceFormat($data->amount * $data->price);
-            if ($data->user->id === Yii::$app->user->id) {
+            if ($data->user_id === Yii::$app->user->id) {
                 $content = '<b>' . $content . '</b>';
             }
             return $content;
@@ -95,9 +95,9 @@ $columns = [
     [
         'attribute' => 'username',
         'label' => 'Пользователь',
-        'content'=>function($data) {
-            $content = $data->user->username;
-            if ($data->user->id === Yii::$app->user->id) {
+        'content'=>function($data) use($users) {
+            $content = $users[$data->user_id];
+            if ($data->user_id === Yii::$app->user->id) {
                 $content = '<b>' . $content . '</b>';
             }
             return $content;
@@ -111,7 +111,7 @@ if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {
         'label'=>'Цена КДВ',
         'content'=>function($data) {
             $content = Tools::priceFormat($data->kdv_price);
-            if ($data->user->id === Yii::$app->user->id) {
+            if ($data->user_id === Yii::$app->user->id) {
                 $content = '<b>' . $content . '</b>';
             }
             return $content;
@@ -122,7 +122,7 @@ if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {
         'label' => 'Сумма КДВ',
         'content' => function ($data) {
             $content = Tools::priceFormat($data->amount * $data->kdv_price);
-            if ($data->user->id === Yii::$app->user->id) {
+            if ($data->user_id === Yii::$app->user->id) {
                 $content = '<b>' . $content . '</b>';
             }
             return $content;
