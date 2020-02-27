@@ -48,7 +48,10 @@ class LoginForm extends Model
             $user = $this->getUser();
 
             if (!$user || !$user->validatePassword($this->password)) {
-                $this->addError($attribute, 'Incorrect username or password.');
+                $this->addError($attribute, 'Некорректный логин или пароль.');
+            }
+            elseif ($user->active ==  Users::STATUS_NOT_ACTIVE) {
+                $this->addError($attribute, 'Учётная запись заблокирована. Обратитесь к администратору.');
             }
         }
     }
