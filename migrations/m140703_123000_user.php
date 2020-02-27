@@ -15,9 +15,9 @@ class m140703_123000_user extends Migration
             'username' => $this->string(32),
             'passwordHash' => $this->string()->notNull(),
             'authKey' => $this->string(32)->notNull(),
-            'accessToken' => $this->string(40)->notNull(),            
+            'accessToken' => $this->string(40)->notNull(),
             'role' => $this->string(5)->notNull()->defaultValue(Users::ROLE_USER),
-            'active' => $this->smallInteger()->notNull()->defaultValue(Users::STATUS_ACTIVE),
+            'active' => $this->smallInteger()->notNull()->defaultValue(Users::STATUS_NOT_ACTIVE),
             'created_at' => $this->integer(),
             'updated_at' => $this->integer()
         ]);
