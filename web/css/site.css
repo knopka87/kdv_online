@@ -122,3 +122,13 @@ a.desc:after {
 .table tfoot td {
 	white-space: nowrap;
 }
+
+.input-group {
+    width: 128px;
+}
+.input-group-btn {
+    width: 39px;
+}
+input.form-control.input-number {
+    width: 50px;
+}

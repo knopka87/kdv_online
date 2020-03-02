@@ -56,6 +56,7 @@ if (!$positionProvider) {
     echo 'Список товаров пуст';
 }
 else {
+    echo Html::tag('h2', 'Мой заказ');
     echo GridView::widget([
         'dataProvider' => $positionProvider,
         'columns' => [
@@ -70,6 +71,30 @@ else {
             [
                 'attribute' => 'amount',
                 'label' => 'Кол-во',
+                'content' => function($data) use($positionModel) {
+                    ob_start();
+                    $form = \yii\bootstrap\ActiveForm::begin([
+                        'layout' => 'inline',
+                        'id' => 'PositionsUpdateForm'.$data['id'],
+                    ]);
+                    echo $form->field($positionModel, 'kdv_url')->hiddenInput(['value' => $data['kdv_url'], 'id' => 'kdv_url'.$data['id']]);
+
+                    echo '<div class="input-group">
+                                    <span class="input-group-btn">
+                                        <button type="button" class="quantity-left-minus btn btn-danger btn-number"  data-type="minus" data-field="amount'.$data['id'].'">
+                                          <span class="glyphicon glyphicon-minus"></span>
+                                        </button>
+                                    </span>
+                                    <input type="text" id="amount'.$data['id'].'" name="OrderPositions[amount]" class="form-control input-number" value="'.$data['amount'].'" onchange="submit();">
+                                    <span class="input-group-btn">
+                                        <button type="button" class="quantity-right-plus btn btn-success btn-number" data-type="plus" >
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </span>
+                              </div>';
+                    \yii\bootstrap\ActiveForm::end();
+                    return ob_get_clean();
+                }
             ],
             [
                 'attribute' => $isAdmin?'kdv_price':'price',
@@ -117,15 +142,27 @@ else {
         <div class="row">
             <?php $form = \yii\bootstrap\ActiveForm::begin([
                 'layout' => 'inline',
-                'id' => 'PositionsUpdateForm',
+                'id' => 'PositionsUpdateForm'.$item['id'],
             ])?>
 
-            <?= $form->field($positionModel, 'kdv_url')->hiddenInput(['value' => $item['kdv_url']])?>
+            <?= $form->field($positionModel, 'kdv_url')->hiddenInput(['value' => $item['kdv_url'], 'id' => 'kdv_url'.$item['id']])?>
             <div class="col-md-7 col-sm-7 col-xs-7 col-mob">
                 <a href="<?=$item['kdv_url']?>" target="_blank"><?=$item['caption']?></a>
             </div>
             <div class="col-md-5 col-sm-5 col-xs-5 col-mob">
-            <?= $form->field($positionModel, 'amount')->textInput(['placeholder' => "Общее кол-во", 'value' => '1','type' => 'number'])->label(false)?>&nbsp;
+                <div class="input-group">
+                                    <span class="input-group-btn">
+                                        <button type="button" class="quantity-left-minus btn btn-danger btn-number"  data-type="minus" data-field="amount<?=$item['id']?>">
+                                          <span class="glyphicon glyphicon-minus"></span>
+                                        </button>
+                                    </span>
+                    <input type="text" id="amount<?=$item['id']?>" name="OrderPositions[amount]" class="form-control input-number" value="<?=$item['multiple']?>">
+                    <span class="input-group-btn">
+                                        <button type="button" class="quantity-right-plus btn btn-success btn-number" data-type="plus" data-field="amount<?=$item['id']?>">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </span>
+                </div>
             <input type="hidden" name="type" value="update_positions"/>
             <button type="submit" class="btn btn-default">Добавить/изменить товар</button>
             </div>
