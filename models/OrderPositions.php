@@ -265,7 +265,7 @@ class OrderPositions extends \yii\db\ActiveRecord
         $position = $this;
         $this->delete();
 
-        if ($position->status == Orders::STATUS_PAYED) {
+        if ($this->order->status == Orders::STATUS_PAYED) {
             UserBalance::refreshBalance($position->order_id, $position->user_id);
         }
     }

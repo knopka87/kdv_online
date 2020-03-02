@@ -41,7 +41,7 @@ echo Breadcrumbs::widget([
                     <strong><?=Tools::priceFormat($item['price'])?>р.</strong>
                 </div>
                 <div class="col-xs-8 text-center">
-                    <?if (!$order && $order->status == \app\models\Orders::STATUS_ACTIVE) :?>
+                    <?if ($order && $order->status == \app\models\Orders::STATUS_ACTIVE) :?>
                     <?=Html::input('number', 'amount', $item['multiple'], ['min' => 1, 'style' => ['width' => '50px', 'text-align' => 'right'], 'id' => 'amount-'.$item['id']])?> <?=$item['unit']?>
                     <?=Html::a(
                             'Добавить',
@@ -58,7 +58,7 @@ echo Breadcrumbs::widget([
         <?endforeach;?>
     </div>
 </div>
-<?if (!$order && $order->status == \app\models\Orders::STATUS_ACTIVE) :?>
+<?if ($order && $order->status == \app\models\Orders::STATUS_ACTIVE) :?>
 <script>
     function addBasket(kdvUrl, orderId, link, id) {
         $.ajax({
