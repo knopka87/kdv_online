@@ -160,6 +160,29 @@ class OrdersController extends \yii\web\Controller
             ]
         );
 
+        $totalPositionsQuery = OrderPositions::find()
+            ->andWhere(['order_id' => $id])
+            ->groupBy('kdv_url')
+            ->addSelect('order_id, kdv_url, price, kdv_price, caption, user_id, multiple')
+            ->addSelect('SUM([[amount]]) AS amount')
+            ->joinWith('user')
+            ->addSelect(['GROUP_CONCAT(DISTINCT users.username,  :p1 , [[amount]],  :p2 SEPARATOR \', \') AS username'])
+            ->addParams([':p1' => ' (', ':p2' => 'шт.)'])
+            ->orderBy(['multiple' => SORT_DESC])
+            ->asArray();
+        ;
+
+        $totalPositionProvider = new ArrayDataProvider(
+            [
+                'allModels' => $totalPositionsQuery->all(),
+                'pagination' => [
+                    'pageSize' => 100
+                ],
+                'sort' => false,
+            ]
+        );
+
+        $users = [];
         $userList = Users::find()->select(['username', 'id'])->asArray()->all();
         foreach ($userList as $user) {
             $users[$user['id']] = $user['username'];
@@ -169,6 +192,7 @@ class OrdersController extends \yii\web\Controller
             'order' => $order,
             'users' => $users,
             'positionProvider' => $dataProvider,
+            'totalPositionProvider' => $totalPositionProvider,
             'positionModel' => $positionModel,
             'ordersUsersModel' => $ordersUsers,
             'ordersUsersStatus' => $ordersUsersStatus
@@ -183,31 +207,6 @@ class OrdersController extends \yii\web\Controller
             $params['topUsedPosition'] = Statistic::getTopUsedPosition(Yii::$app->user->id);
             $params['whoIsProcessing'] = $order->whoIsProcessing();
             $params['countUsers'] = OrdersUsers::find()->andWhere(['order_id' => $id])->count();
-        }
-
-        if (in_array($order->status, [Orders::STATUS_ACTIVE, Orders::STATUS_BLOCK])) {
-            $totalPositionsQuery = OrderPositions::find()
-                ->andWhere(['order_id' => $id])
-                ->groupBy('kdv_url')
-                ->addSelect('order_id, kdv_url, price, kdv_price, caption, user_id, multiple')
-                ->addSelect('SUM([[amount]]) AS amount')
-                ->joinWith('user')
-                ->addSelect(['GROUP_CONCAT(DISTINCT users.username,  :p1 , [[amount]],  :p2 SEPARATOR \', \') AS username'])
-                ->addParams([':p1' => ' (', ':p2' => 'шт.)'])
-                ->orderBy(['multiple' => SORT_DESC])
-                ->asArray();
-            ;
-
-            $totalPositionProvider = new ArrayDataProvider(
-                [
-                    'allModels' => $totalPositionsQuery->all(),
-                    'pagination' => [
-                        'pageSize' => 100
-                    ],
-                    'sort' => false,
-                ]
-            );
-            $params['totalPositionProvider'] = $totalPositionProvider;
         }
 
         return $this->render($view, $params);
