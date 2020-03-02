@@ -22,12 +22,6 @@ if ($order->status === Orders::STATUS_BLOCK) {
     echo '<p class="text-danger">Заказ заблокирован!</p>';
 }
 
-/*
-$positions = $positions->all();
-foreach ($positions as $position) {
-    var_dump($position->user->username);
-}*/
-
 
 $columns = [
     [

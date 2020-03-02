@@ -6,10 +6,8 @@
 
 use app\models\OrderPositions;
 use app\models\OrdersUsers;
-use app\widgets\Alert;
 use yii\grid\GridView;
 use yii\helpers\Html;
-use yii\widgets\Pjax;
 
 $isAdmin = !Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin();
 ?>
