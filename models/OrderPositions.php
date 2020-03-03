@@ -270,13 +270,13 @@ class OrderPositions extends \yii\db\ActiveRecord
         }
     }
 
-    public static function getTotalPrice($dataProvider) {
+    public static function getTotalPrice($dataProvider, $adminPrice = false) {
 
         $totalBalance = 0;
-        $isAdmin = !Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin();
+        $adminPrice = $adminPrice && !Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin();
 
         foreach ($dataProvider as $item){
-            if ($isAdmin) {
+            if ($adminPrice) {
                 $totalBalance += $item['amount'] * $item['kdv_price'];
             }
             else {
@@ -284,7 +284,7 @@ class OrderPositions extends \yii\db\ActiveRecord
             }
         }
 
-        return round($totalBalance, 2);
+        return Tools::priceFormat($totalBalance);
     }
 
     public static function getTotalWeight($dataProvider) {

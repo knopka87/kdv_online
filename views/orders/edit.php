@@ -6,6 +6,7 @@
 
 use app\models\OrderPositions;
 use app\models\OrdersUsers;
+use app\models\Tools;
 use app\widgets\Alert;
 use yii\grid\GridView;
 use yii\helpers\Html;
@@ -57,29 +58,27 @@ if (!$positionProvider) {
 }
 else {
     echo Html::tag('h2', 'Мой заказ');
-    echo GridView::widget([
-        'dataProvider' => $positionProvider,
-        'columns' => [
-            [
-                'attribute' => 'kdv_url',
-                'label' => 'Товар',
-                'content' => function ($data) {
-                    return Html::a($data->caption, $data->kdv_url, ['target' => '_blank']);
-                },
-                'footer' => '<b>Итого:</b>',
-            ],
-            [
-                'attribute' => 'amount',
-                'label' => 'Кол-во',
-                'content' => function($data) use($positionModel) {
-                    ob_start();
-                    $form = \yii\bootstrap\ActiveForm::begin([
-                        'layout' => 'inline',
-                        'id' => 'PositionsUpdateForm'.$data['id'],
-                    ]);
-                    echo $form->field($positionModel, 'kdv_url')->hiddenInput(['value' => $data['kdv_url'], 'id' => 'kdv_url'.$data['id']]);
+    $columns = [
+        [
+            'attribute' => 'kdv_url',
+            'label' => 'Товар',
+            'content' => function ($data) {
+                return Html::a($data->caption, $data->kdv_url, ['target' => '_blank']);
+            },
+            'footer' => '<b>Итого:</b>',
+        ],
+        [
+            'attribute' => 'amount',
+            'label' => 'Кол-во',
+            'content' => function($data) use($positionModel) {
+                ob_start();
+                $form = \yii\bootstrap\ActiveForm::begin([
+                    'layout' => 'inline',
+                    'id' => 'PositionsUpdateForm'.$data['id'],
+                ]);
+                echo $form->field($positionModel, 'kdv_url')->hiddenInput(['value' => $data['kdv_url'], 'id' => 'kdv_url'.$data['id']]);
 
-                    echo '<div class="input-group">
+                echo '<div class="input-group">
                                     <span class="input-group-btn">
                                         <button type="button" class="quantity-left-minus btn btn-danger btn-number"  data-type="minus" data-field="amount'.$data['id'].'">
                                           <span class="glyphicon glyphicon-minus"></span>
@@ -92,51 +91,71 @@ else {
                                         </button>
                                     </span>
                               </div>';
-                    \yii\bootstrap\ActiveForm::end();
-                    return ob_get_clean();
-                }
-            ],
-            [
-                'attribute' => $isAdmin?'kdv_price':'price',
-                'label' => 'Цена',
-
-            ],
-            [
-                'attribute' => 'total',
-                'label' => 'Сумма',
-                'content' => function ($data) {
-                    $isAdmin = !Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin();
-                    if ($isAdmin) {
-                        return $data['amount']*$data['kdv_price'];
-                    }
-                    return $data['amount']*$data['price'];
-                },
-                'footer' => "<b>" . OrderPositions::getTotalPrice($positionProvider->models) . "</b>",
-            ],
-            [
-                'class' => 'yii\grid\ActionColumn',
-                'template' => '{delete}',
-                'buttons' => [
-                    'delete' => function ($url, $model, $key) {
-                        return Html::a(
-                            '<span class="glyphicon glyphicon-trash"></span>',
-                            \yii\helpers\Url::to(['positions/delete', 'id' => $key, 'orderId' => $model->order_id]),
-                            [
-                                'data-pjax' => '#model-grid',
-                                'title' => Yii::t('app', 'Delete')
-                            ]
-                        );
-                    },
-                ]
-            ],
+                \yii\bootstrap\ActiveForm::end();
+                return ob_get_clean();
+            }
         ],
+        [
+            'attribute' => 'price',
+            'label' => 'Цена',
+            'content'=>function($data) {
+                return Tools::priceFormat($data->price);
+            },
+
+        ],
+        [
+            'attribute' => 'total',
+            'label' => 'Сумма',
+            'content' => function ($data) {
+                return Tools::priceFormat($data->amount*$data->price);
+            },
+            'footer' => '<b>' . OrderPositions::getTotalPrice($positionProvider->models) . '</b>',
+        ],
+    ];
+    if($isAdmin) {
+        $columns[] = [
+            'attribute' => 'kdv_price',
+            'label' => 'Цена КДВ',
+            'content' => function ($data) {
+                return Tools::priceFormat($data->kdv_price);
+            },
+
+        ];
+        $columns[] = [
+            'attribute' => 'total',
+            'label' => 'Сумма КДВ',
+            'content' => function ($data) {
+                return Tools::priceFormat($data->amount*$data->kdv_price);
+            },
+            'footer' => '<b>' . OrderPositions::getTotalPrice($positionProvider->models, true) . '</b>',
+        ];
+    }
+    $columns[] = [
+        'class' => 'yii\grid\ActionColumn',
+        'template' => '{delete}',
+        'buttons' => [
+            'delete' => function ($url, $model, $key) {
+                return Html::a(
+                    '<span class="glyphicon glyphicon-trash"></span>',
+                    \yii\helpers\Url::to(['positions/delete', 'id' => $key, 'orderId' => $model->order_id]),
+                    [
+                        'data-pjax' => '#model-grid',
+                        'title' => Yii::t('app', 'Delete')
+                    ]
+                );
+            },
+        ]
+    ];
+    echo GridView::widget([
+        'dataProvider' => $positionProvider,
+        'columns' => $columns,
         'showFooter' => true,
         'summary' => false,
     ]);
 }?>
 <?php if (!empty($topUsedPosition)):?>
 <br>
-<h2>Ранее вы покупали</h2>
+<h2>Ранее покупал(a)</h2>
 <br>
 <?php foreach ($topUsedPosition as $item):?>
         <div class="row">
@@ -174,54 +193,70 @@ else {
 
 <br>
 <h2>Итоговый заказ</h2>
-<?= GridView::widget([
-    'dataProvider' => $totalPositionProvider,
-    'columns' => [
-        ['class' => 'yii\grid\SerialColumn'],
-        [
-            'attribute' => 'kdv_url',
-            'label' => 'Товар',
-            'content' => function($data) {
-                return Html::a($data['caption'], $data['kdv_url'], ['target' => '_blank']);
-            },
-            'footer' => '<b>Итого:</b>',
-        ],
-        [
-            'attribute' => 'amount',
-            'label' => 'Кол-во',
-            'content' => function($data) {
-                return round($data['amount'], 2);
-            }
-        ],
-        [
-            'attribute' => 'multiple',
-            'label' => 'Упаковка, шт'
-        ],
-        [
-            'attribute' => $isAdmin?'kdv_price':'price',
-            'label' => 'Цена',
-
-        ],
-        [
-            'attribute' => 'total',
-            'label' => 'Сумма',
-            'content'=>function($data) {
-                $isAdmin = !Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin();
-                if ($isAdmin) {
-                    return round($data['amount']*$data['kdv_price'], 2);
-                }
-                return round($data['amount']*$data['price'], 2);
-            },
-            'footer' => '<b>' .OrderPositions::getTotalPrice($totalPositionProvider->models). '</b>',
-        ],
-        [
-            'attribute' => 'users',
-            'label' => 'Пользователи',
-            'content'=>function($data) {
-            	return $data['username'];
-            },
-        ],
+<?php
+$columns = [
+    ['class' => 'yii\grid\SerialColumn'],
+    [
+        'attribute' => 'kdv_url',
+        'label' => 'Товар',
+        'content' => function($data) {
+            return Html::a($data['caption'], $data['kdv_url'], ['target' => '_blank']);
+        },
+        'footer' => '<b>Итого:</b>',
     ],
+    [
+        'attribute' => 'amount',
+        'label' => 'Кол-во',
+        'content' => function($data) {
+            return round($data['amount'], 2);
+        }
+    ],
+    [
+        'attribute' => 'multiple',
+        'label' => 'Упаковка, шт'
+    ],
+    [
+        'attribute' => 'price',
+        'label' => 'Цена',
+        'content' => function ($data) {
+            return Tools::priceFormat($data['price']);
+        },
+
+    ],
+    [
+        'attribute' => 'total',
+        'label' => 'Сумма',
+        'content'=>function($data) {
+            return Tools::priceFormat($data['amount']*$data['price']);
+        },
+        'footer' => '<b>' .OrderPositions::getTotalPrice($totalPositionProvider->models). '</b>',
+    ],
+];
+if ($isAdmin) {
+    $columns[] = [
+        'attribute' => 'kdv_price',
+        'label' => 'Цена КДВ',
+
+    ];
+    $columns[] = [
+        'attribute' => 'total',
+        'label' => 'Сумма КДВ',
+        'content'=>function($data) {
+            return Tools::priceFormat($data['amount']*$data['kdv_price']);
+        },
+        'footer' => '<b>' .OrderPositions::getTotalPrice($totalPositionProvider->models, true). '</b>',
+    ];
+}
+$columns[] = [
+    'attribute' => 'users',
+    'label' => 'Пользователи',
+    'content'=>function($data) {
+        return $data['username'];
+    },
+];
+echo GridView::widget([
+    'dataProvider' => $totalPositionProvider,
+    'columns' => $columns,
     'showFooter' => true,
     'summary' => false,
     'rowOptions' => function ($model, $key, $index, $grid)

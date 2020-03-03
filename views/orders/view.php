@@ -84,7 +84,7 @@ $columns = [
             }
             return $content;
         },
-        'footer' => "<b>" . Tools::priceFormat(OrderPositions::getTotalPrice($positionProvider->models)) . "</b>",
+        'footer' => "<b>" . OrderPositions::getTotalPrice($positionProvider->models) . "</b>",
     ],
     [
         'attribute' => 'username',
@@ -121,7 +121,7 @@ if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {
             }
             return $content;
         },
-        'footer' => "<b>" . Tools::priceFormat(OrderPositions::getTotalPrice($positionProvider->models)) . "</b>",
+        'footer' => "<b>" . OrderPositions::getTotalPrice($positionProvider->models) . "</b>",
     ];
     $columns[] = [
         'class' => 'yii\grid\ActionColumn',
