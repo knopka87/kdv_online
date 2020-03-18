@@ -110,6 +110,10 @@ class CatalogCategory extends \yii\db\ActiveRecord
         $kdvProduct = new KdvProduct();
         $kdvItems = $kdvProduct->getProductList($categoryId);
 
+        if (empty($kdvItems)) {
+            return [];
+        }
+
         foreach ($kdvItems as $kdvItem) {
             $item = [];
             if ($kdvItem->isAvailable) {
