@@ -5,7 +5,7 @@ namespace app\models\kdv;
 
 class Kdv
 {
-    private $token = '488e574cca3f1c3e0cb0afc6e890e04b1c0f9052-e35fcaf2108c1001e5b7685f825d3ddf95afe847';
+    private $token = '1e79cd11b1a0fe01372add36bc417a2e67c08cc0-6cea934a3644335ed5f69a74706d49b879fc8dc9';
     private static $_instance;
 
     private function __construct()
