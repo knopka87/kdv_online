@@ -22,6 +22,84 @@ if ($order->status === Orders::STATUS_BLOCK) {
     echo '<p class="text-danger">Заказ заблокирован!</p>';
 }
 
+if (!$positionProvider) {
+    echo 'Список товаров пуст';
+}
+else {
+    echo Html::tag('h2', 'Мой заказ');
+    $columns = [
+        [
+            'attribute' => 'kdv_url',
+            'label' => 'Товар',
+            'content' => function ($data) {
+                return Html::a($data->caption, $data->kdv_url, ['target' => '_blank']);
+            },
+            'footer' => '<b>Итого:</b>',
+        ],
+        [
+            'attribute' => 'amount',
+            'label' => 'Кол-во',
+        ],
+        [
+            'attribute' => 'price',
+            'label' => 'Цена',
+            'content'=>function($data) {
+                return Tools::priceFormat($data->price);
+            },
+
+        ],
+        [
+            'attribute' => 'total',
+            'label' => 'Сумма',
+            'content' => function ($data) {
+                return Tools::priceFormat($data->amount*$data->price);
+            },
+            'footer' => '<b>' . OrderPositions::getTotalPrice($positionProvider->models) . '</b>',
+        ],
+    ];
+    if($isAdmin) {
+        $columns[] = [
+            'attribute' => 'kdv_price',
+            'label' => 'Цена КДВ',
+            'content' => function ($data) {
+                return Tools::priceFormat($data->kdv_price);
+            },
+
+        ];
+        $columns[] = [
+            'attribute' => 'total',
+            'label' => 'Сумма КДВ',
+            'content' => function ($data) {
+                return Tools::priceFormat($data->amount*$data->kdv_price);
+            },
+            'footer' => '<b>' . OrderPositions::getTotalPrice($positionProvider->models, true) . '</b>',
+        ];
+    }
+    $columns[] = [
+        'class' => 'yii\grid\ActionColumn',
+        'template' => '{delete}',
+        'buttons' => [
+            'delete' => function ($url, $model, $key) {
+                return Html::a(
+                    '<span class="glyphicon glyphicon-trash"></span>',
+                    \yii\helpers\Url::to(['positions/delete', 'id' => $key, 'orderId' => $model->order_id]),
+                    [
+                        'data-pjax' => '#model-grid',
+                        'title' => Yii::t('app', 'Delete')
+                    ]
+                );
+            },
+        ]
+    ];
+    echo GridView::widget([
+        'dataProvider' => $positionProvider,
+        'columns' => $columns,
+        'showFooter' => true,
+        'summary' => false,
+    ]);
+}
+
+echo Html::tag('h2', 'Итоговый заказ');
 
 $columns = [
     [
@@ -49,7 +127,7 @@ $columns = [
             }
             return $content;
         },
-        'footer' => "<b>" . OrderPositions::getDischangeHTML(OrderPositions::getTotalWeight($positionProvider->models)) . "</b>",
+        'footer' => "<b>" . OrderPositions::getDischangeHTML(OrderPositions::getTotalWeight($viewTotalPositionsList->models)) . "</b>",
     ],
     [
         'attribute'=>'amount',
@@ -61,7 +139,7 @@ $columns = [
             }
             return $content;
         },
-        'footer' => "<b>" . Tools::pageTotal($positionProvider->models, 'amount') . "</b>",
+        'footer' => "<b>" . Tools::pageTotal($viewTotalPositionsList->models, 'amount') . "</b>",
     ],
     [
         'attribute'=>'price',
@@ -84,7 +162,7 @@ $columns = [
             }
             return $content;
         },
-        'footer' => "<b>" . OrderPositions::getTotalPrice($positionProvider->models) . "</b>",
+        'footer' => "<b>" . OrderPositions::getTotalPrice($viewTotalPositionsList->models) . "</b>",
     ],
     [
         'attribute' => 'username',
@@ -121,7 +199,7 @@ if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {
             }
             return $content;
         },
-        'footer' => "<b>" . OrderPositions::getTotalPrice($positionProvider->models) . "</b>",
+        'footer' => "<b>" . OrderPositions::getTotalPrice($viewTotalPositionsList->models, true) . "</b>",
     ];
     $columns[] = [
         'class' => 'yii\grid\ActionColumn',
@@ -164,7 +242,7 @@ if(
 
 
 echo GridView::widget([
-    'dataProvider' => $positionProvider,
+    'dataProvider' => $viewTotalPositionsList,
     'columns' => $columns,
     'pager' => [
         'hideOnSinglePage' => true,

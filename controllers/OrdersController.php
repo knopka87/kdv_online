@@ -133,22 +133,30 @@ class OrdersController extends \yii\web\Controller
                 $view = 'edit';
                 $ordersUsersStatus = 'process';
             }
-
-            $positionsQuery = OrderPositions::find()
-                ->andWhere(['order_id' => $id,'user_id' => Yii::$app->user->id]);
-
         }
         elseif (in_array($order->status, Orders::statusDone())) {
             $view = 'view';
             $ordersUsersStatus = 'close';
-            $positionsQuery = OrderPositions::find()
+            $viewTotalPositionsQuery = OrderPositions::find()
                 ->addSelect(['*', 'IF(user_id = '.Yii::$app->user->id.', 0, 1) as sort_user'])
                 ->andWhere(['order_id' => $id])
                 ->orderBy(['sort_user' => SORT_ASC, 'user_id' => SORT_ASC]);
+            $viewTotalDataProvider = new ActiveDataProvider(
+                [
+                    'query' => $viewTotalPositionsQuery,
+                    'pagination' => [
+                        'pageSize' => 100
+                    ],
+                    'sort' => false,
+                ]
+            );
         }
         else {
             return ''; // заказ не активен
         }
+
+        $positionsQuery = OrderPositions::find()
+            ->andWhere(['order_id' => $id,'user_id' => Yii::$app->user->id]);
 
         $dataProvider = new ActiveDataProvider(
             [
@@ -202,6 +210,7 @@ class OrdersController extends \yii\web\Controller
             $params['writeOffList'] = Statistic::topBalanceList('writeOff', $id);
             $params['countPositionsList'] = Statistic::topCountPositionsList($id);
             $params['weightList'] = Statistic::topWeightList($id);
+            $params['viewTotalPositionsList'] = $viewTotalDataProvider;
         }
         elseif ($order->status == Orders::STATUS_ACTIVE) {
             $params['topUsedPosition'] = Statistic::getTopUsedPosition(Yii::$app->user->id);
