@@ -102,7 +102,6 @@ class Users extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
     public static function findByUsername($username)
     {
         return static::find()
-            ->active()
             ->andWhere(['username' => $username])
             ->one();
     }
@@ -227,7 +226,7 @@ class Users extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
 
         return $this->role === Users::ROLE_ADMINISTRATOR;
     }
-    
+
     public function getUserNames() {
 		$userList = self::find()->select(['username', 'id'])->asArray()->all();
         foreach ($userList as $user) {
