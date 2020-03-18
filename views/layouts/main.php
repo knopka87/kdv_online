@@ -38,20 +38,17 @@ AppAsset::register($this);
 
     if (!Yii::$app->user->isGuest) {
         $leftItems[] = '<li>'.\app\models\UserBalance::getBalanceHtml(). '</li>';
+        $leftItems[] = [
+            'label' => 'Donate',
+            'url' => ['balance/donate'],
+            'linkOptions' => ['style' => 'background-color: #fcf8e3; color: #777;']
+        ];
+        echo Nav::widget([
+            'options' => ['class' => 'navbar-nav navbar-left'],
+            'items' => $leftItems
+        ]);
     }
 
-    $leftItems[] = [
-        'label' => 'Donate',
-        'url' => ['balance/donate'],
-        'linkOptions' => ['style' => 'background-color: #fcf8e3; color: #777;']
-    ];
-
-
-
-    echo Nav::widget([
-        'options' => ['class' => 'navbar-nav navbar-left'],
-        'items' => $leftItems
-    ]);
 
     $items = [
             ['label' => 'Авторизоваться', 'url' => ['/site/login']],
