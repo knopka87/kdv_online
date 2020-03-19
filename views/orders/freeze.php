@@ -39,6 +39,7 @@ if ($ordersUsersStatus === 'done') {
     if (!$positionProvider) {
         echo 'Список товаров пуст';
     } else {
+        echo Html::tag('h2', 'Мой заказ');
         $columns = [
             [
                 'attribute' => 'kdv_url',

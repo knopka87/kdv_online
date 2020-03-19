@@ -5,6 +5,7 @@ namespace app\controllers;
 use app\models\kdv\KdvBasket;
 use app\models\Notification;
 use app\models\OrderPositions;
+use app\models\OrderPositionsSearch;
 use app\models\Orders;
 use app\models\OrdersUsers;
 use app\models\Statistic;
@@ -133,23 +134,35 @@ class OrdersController extends \yii\web\Controller
                 $view = 'edit';
                 $ordersUsersStatus = 'process';
             }
-        }
-        elseif (in_array($order->status, Orders::statusDone())) {
-            $view = 'view';
-            $ordersUsersStatus = 'close';
-            $viewTotalPositionsQuery = OrderPositions::find()
-                ->addSelect(['*', 'IF(user_id = '.Yii::$app->user->id.', 0, 1) as sort_user'])
+
+            $totalPositionsQuery = OrderPositions::find()
                 ->andWhere(['order_id' => $id])
-                ->orderBy(['sort_user' => SORT_ASC, 'user_id' => SORT_ASC]);
-            $viewTotalDataProvider = new ActiveDataProvider(
+                ->groupBy('kdv_url')
+                ->addSelect('order_id, kdv_url, price, kdv_price, caption, user_id, multiple')
+                ->addSelect('SUM([[amount]]) AS amount')
+                ->joinWith('user')
+                ->addSelect(['GROUP_CONCAT(DISTINCT users.username,  :p1 , [[amount]],  :p2 SEPARATOR \', \') AS username'])
+                ->addParams([':p1' => ' (', ':p2' => 'шт.)'])
+                ->orderBy(['multiple' => SORT_DESC])
+                ->asArray();
+            ;
+
+            $totalPositionProvider = new ArrayDataProvider(
                 [
-                    'query' => $viewTotalPositionsQuery,
+                    'allModels' => $totalPositionsQuery->all(),
                     'pagination' => [
                         'pageSize' => 100
                     ],
                     'sort' => false,
                 ]
             );
+        }
+        elseif (in_array($order->status, Orders::statusDone())) {
+            $view = 'view';
+            $ordersUsersStatus = 'close';
+
+            $searchModel = new OrderPositionsSearch();
+            $viewTotalDataProvider = $searchModel->getTotalPositionProvider($id, Yii::$app->request->post());
         }
         else {
             return ''; // заказ не активен
@@ -168,54 +181,37 @@ class OrdersController extends \yii\web\Controller
             ]
         );
 
-        $totalPositionsQuery = OrderPositions::find()
-            ->andWhere(['order_id' => $id])
-            ->groupBy('kdv_url')
-            ->addSelect('order_id, kdv_url, price, kdv_price, caption, user_id, multiple')
-            ->addSelect('SUM([[amount]]) AS amount')
-            ->joinWith('user')
-            ->addSelect(['GROUP_CONCAT(DISTINCT users.username,  :p1 , [[amount]],  :p2 SEPARATOR \', \') AS username'])
-            ->addParams([':p1' => ' (', ':p2' => 'шт.)'])
-            ->orderBy(['multiple' => SORT_DESC])
-            ->asArray();
-        ;
-
-        $totalPositionProvider = new ArrayDataProvider(
-            [
-                'allModels' => $totalPositionsQuery->all(),
-                'pagination' => [
-                    'pageSize' => 100
-                ],
-                'sort' => false,
-            ]
-        );
-
         $users = [];
-        $userList = Users::find()->select(['username', 'id'])->asArray()->all();
+        $userList = OrderPositions::find()
+            ->joinWith('user')
+            ->select(['username', 'user_id'])
+            ->andWhere(['order_id' =>  $id])
+            ->asArray()->all();
         foreach ($userList as $user) {
-            $users[$user['id']] = $user['username'];
+            $users[$user['user_id']] = $user['username'];
         }
 
         $params = [
             'order' => $order,
             'users' => $users,
             'positionProvider' => $dataProvider,
-            'totalPositionProvider' => $totalPositionProvider,
             'positionModel' => $positionModel,
             'ordersUsersModel' => $ordersUsers,
             'ordersUsersStatus' => $ordersUsersStatus
         ];
 
-        if (in_array($order->status, Orders::statusDone())) {
+        if ($order->status == Orders::STATUS_ACTIVE) {
+            $params['totalPositionProvider'] = $totalPositionProvider;
+            $params['topUsedPosition'] = Statistic::getTopUsedPosition(Yii::$app->user->id);
+            $params['whoIsProcessing'] = $order->whoIsProcessing();
+            $params['countUsers'] = OrdersUsers::find()->andWhere(['order_id' => $id])->count();
+        }
+        elseif (in_array($order->status, Orders::statusDone())) {
             $params['writeOffList'] = Statistic::topBalanceList('writeOff', $id);
             $params['countPositionsList'] = Statistic::topCountPositionsList($id);
             $params['weightList'] = Statistic::topWeightList($id);
             $params['viewTotalPositionsList'] = $viewTotalDataProvider;
-        }
-        elseif ($order->status == Orders::STATUS_ACTIVE) {
-            $params['topUsedPosition'] = Statistic::getTopUsedPosition(Yii::$app->user->id);
-            $params['whoIsProcessing'] = $order->whoIsProcessing();
-            $params['countUsers'] = OrdersUsers::find()->andWhere(['order_id' => $id])->count();
+            $params['searchModel'] = $searchModel;
         }
 
         return $this->render($view, $params);

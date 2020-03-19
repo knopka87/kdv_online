@@ -10,96 +10,19 @@ use app\models\Tools;
 use app\widgets\Alert;
 use yii\grid\GridView;
 use yii\helpers\Html;
+use yii\widgets\Pjax;
 
 $this->registerCssFile('@web/css/style-75.css');
 ?>
 <h1>Заказ № <?=$order->id?> от <?=\Yii::$app->formatter->asDate($order->created_at, 'php:d.m.Y')?></h1>
 
-
 <?php
+
+$isAdmin = !Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin();
 
 if ($order->status === Orders::STATUS_BLOCK) {
     echo '<p class="text-danger">Заказ заблокирован!</p>';
 }
-
-if (!$positionProvider) {
-    echo 'Список товаров пуст';
-}
-else {
-    echo Html::tag('h2', 'Мой заказ');
-    $columns = [
-        [
-            'attribute' => 'kdv_url',
-            'label' => 'Товар',
-            'content' => function ($data) {
-                return Html::a($data->caption, $data->kdv_url, ['target' => '_blank']);
-            },
-            'footer' => '<b>Итого:</b>',
-        ],
-        [
-            'attribute' => 'amount',
-            'label' => 'Кол-во',
-        ],
-        [
-            'attribute' => 'price',
-            'label' => 'Цена',
-            'content'=>function($data) {
-                return Tools::priceFormat($data->price);
-            },
-
-        ],
-        [
-            'attribute' => 'total',
-            'label' => 'Сумма',
-            'content' => function ($data) {
-                return Tools::priceFormat($data->amount*$data->price);
-            },
-            'footer' => '<b>' . OrderPositions::getTotalPrice($positionProvider->models) . '</b>',
-        ],
-    ];
-    if($isAdmin) {
-        $columns[] = [
-            'attribute' => 'kdv_price',
-            'label' => 'Цена КДВ',
-            'content' => function ($data) {
-                return Tools::priceFormat($data->kdv_price);
-            },
-
-        ];
-        $columns[] = [
-            'attribute' => 'total',
-            'label' => 'Сумма КДВ',
-            'content' => function ($data) {
-                return Tools::priceFormat($data->amount*$data->kdv_price);
-            },
-            'footer' => '<b>' . OrderPositions::getTotalPrice($positionProvider->models, true) . '</b>',
-        ];
-    }
-    $columns[] = [
-        'class' => 'yii\grid\ActionColumn',
-        'template' => '{delete}',
-        'buttons' => [
-            'delete' => function ($url, $model, $key) {
-                return Html::a(
-                    '<span class="glyphicon glyphicon-trash"></span>',
-                    \yii\helpers\Url::to(['positions/delete', 'id' => $key, 'orderId' => $model->order_id]),
-                    [
-                        'data-pjax' => '#model-grid',
-                        'title' => Yii::t('app', 'Delete')
-                    ]
-                );
-            },
-        ]
-    ];
-    echo GridView::widget([
-        'dataProvider' => $positionProvider,
-        'columns' => $columns,
-        'showFooter' => true,
-        'summary' => false,
-    ]);
-}
-
-echo Html::tag('h2', 'Итоговый заказ');
 
 $columns = [
     [
@@ -165,7 +88,7 @@ $columns = [
         'footer' => "<b>" . OrderPositions::getTotalPrice($viewTotalPositionsList->models) . "</b>",
     ],
     [
-        'attribute' => 'username',
+        'attribute' => 'user_id',
         'label' => 'Пользователь',
         'content'=>function($data) use($users) {
             $content = $users[$data->user_id];
@@ -173,11 +96,12 @@ $columns = [
                 $content = '<b>' . $content . '</b>';
             }
             return $content;
-        }
+        },
+        'filter' => $users
     ]
 ];
 
-if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {
+if($isAdmin) {
     $columns[] = [
         'attribute'=>'price',
         'label'=>'Цена КДВ',
@@ -217,32 +141,30 @@ if(!Yii::$app->user->isGuest && Yii::$app->user->identity->isAdmin()) {
             },
         ],
     ];
+
+    if($order->status == Orders::STATUS_BLOCK) {
+        $form = \yii\bootstrap\ActiveForm::begin([
+            'layout' => 'inline',
+            'id' => 'PositionsUpdateForm',
+        ]);
+        ?>
+        <?= Alert::widget() ?>
+
+        <?= $form->field($positionModel, 'kdv_url')->textInput(['placeholder' => "Kdv url"])->label(false);?>&nbsp;
+        <?= $form->field($positionModel, 'amount')->textInput(['placeholder' => "Общее кол-во", 'value' => '1', 'type' => 'number'])->label(false)?>&nbsp;
+        <?= $form->field($positionModel, 'user_id')->dropDownList($users)->label(Yii::t('app', 'Пользователь'))?>&nbsp;
+        <button type="submit" class="btn btn-default">Добавить/изменить товар</button>
+        <?php
+        \yii\bootstrap\ActiveForm::end();
+        echo '<br><br>';
+    }
 }
-
-if(
-    $order->status == Orders::STATUS_BLOCK &&
-    !Yii::$app->user->isGuest &&
-     Yii::$app->user->identity->isAdmin()
-) {
-    $form = \yii\bootstrap\ActiveForm::begin([
-        'layout' => 'inline',
-        'id' => 'PositionsUpdateForm',
-    ]);
-?>
-    <?= Alert::widget() ?>
-
-    <?= $form->field($positionModel, 'kdv_url')->textInput(['placeholder' => "Kdv url"])->label(false);?>&nbsp;
-    <?= $form->field($positionModel, 'amount')->textInput(['placeholder' => "Общее кол-во", 'value' => '1', 'type' => 'number'])->label(false)?>&nbsp;
-    <?= $form->field($positionModel, 'user_id')->dropDownList($users)->label(Yii::t('app', 'Пользователь'))?>&nbsp;
-    <button type="submit" class="btn btn-default">Добавить/изменить товар</button>
-<?php
-    \yii\bootstrap\ActiveForm::end();
-    echo '<br><br>';
-}
-
-
+Pjax::begin([
+    'clientOptions' => ['method' => 'POST']
+]);
 echo GridView::widget([
     'dataProvider' => $viewTotalPositionsList,
+    'filterModel' => $searchModel,
     'columns' => $columns,
     'pager' => [
         'hideOnSinglePage' => true,
@@ -251,7 +173,7 @@ echo GridView::widget([
     'showFooter' => true,
     'summary' => false,
 ]);
-
+Pjax::end();
 ?>
 <?if ($order->status == Orders::STATUS_PAYED) :?>
 <h2>Доска почёта по заказу</h2>
