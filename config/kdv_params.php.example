@@ -1,0 +1,6 @@
+<?php
+ return [
+     'kdv_login' => '',
+     'kdv_password' => '',
+     'tinkoff_link' => ''
+ ];
