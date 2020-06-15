@@ -33,3 +33,6 @@ tests/_support/_generated
 /.vagrant
 
 /config/kdv_params.php
+/config/db.php
+
+.env
